@@ -1,25 +1,42 @@
 {
   "expo": {
-    "name": "FSPTechApp",
-    "slug": "FSPTechApp",
+    "name": "FSP Technician",
+    "slug": "fsp-technician",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/images/icon.png",
+    "scheme": "fsptech",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0066FF"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "work.fieldservicepro.tech",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take before/after photos for jobs",
+        "NSPhotoLibraryUsageDescription": "Attach photos to jobs",
+        "NSLocationWhenInUseUsageDescription": "Navigate to job sites",
+        "NSMicrophoneUsageDescription": "Voice notes on jobs"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0066FF"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "work.fieldservicepro.tech",
+      "permissions": ["CAMERA","READ_EXTERNAL_STORAGE","ACCESS_FINE_LOCATION","VIBRATE"]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-location", {"locationAlwaysAndWhenInUsePermission": "Navigate to job sites"}],
+      ["expo-camera", {"cameraPermission": "Take job photos"}],
+      "expo-notifications"
+    ],
+    "experiments": { "typedRoutes": true }
   }
 }

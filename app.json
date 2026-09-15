@@ -54,7 +54,8 @@
           "cameraPermission": "Take job photos"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-signature"
     ],
     "experiments": {
       "typedRoutes": true

@@ -28,15 +28,43 @@
         "backgroundColor": "#0066FF"
       },
       "package": "work.fieldservicepro.tech",
-      "permissions": ["CAMERA","READ_EXTERNAL_STORAGE","ACCESS_FINE_LOCATION","VIBRATE"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "VIBRATE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      ["expo-location", {"locationAlwaysAndWhenInUsePermission": "Navigate to job sites"}],
-      ["expo-camera", {"cameraPermission": "Take job photos"}],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Navigate to job sites"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Take job photos"
+        }
+      ],
       "expo-notifications"
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "302bd097-7d3d-4027-8bf2-993789a706aa"
+      }
+    },
+    "owner": "shri026"
   }
 }

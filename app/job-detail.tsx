@@ -60,7 +60,8 @@ export default function JobDetail() {
 
   const handleStart = async () => {
     haptic.medium();
-    await supabase.from('jobs').update({ status: 'in_progress' } as any).eq('id', id as string);
+    const startedAt = new Date().toISOString();
+    await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
     setJob({ ...job, status: 'in_progress' });
     setTimerRunning(true);
     Alert.alert('⏱ Job Started!', 'Timer is now running');
@@ -69,7 +70,8 @@ export default function JobDetail() {
   const handleComplete = async () => {
     haptic.success();
     setTimerRunning(false);
-    await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes } as any).eq('id', id as string);
+    const completedAt = new Date().toISOString();
+    await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds } as any).eq('id', id as string);
     setJob({ ...job, status: 'completed' });
     setShowCompleteModal(false);
     // Send completion email

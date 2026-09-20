@@ -48,6 +48,10 @@ export default function Profile() {
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
         <Text style={styles.name}>{user?.display_name || 'Technician'}</Text>
+        <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile' as any)}>
+          <Ionicons name="pencil-outline" size={14} color="#0066FF" />
+          <Text style={styles.editBtnText}>Edit Profile</Text>
+        </TouchableOpacity>
         <Text style={styles.role}>{user?.employment_type || 'Technician'} · {org?.name}</Text>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
@@ -157,6 +161,8 @@ const styles = StyleSheet.create({
   skillText: { fontSize: 13, fontWeight: '600', color: '#0066FF' },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   infoText: { fontSize: 15, color: '#1E293B' },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 8 },
+  editBtnText: { fontSize: 12, fontWeight: '700', color: '#0066FF' },
   signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 16, margin: 16, padding: 16 },
   signOutText: { fontSize: 16, fontWeight: '700', color: '#EF4444' },
   version: { textAlign: 'center', fontSize: 12, color: '#CBD5E1', marginBottom: 8 },

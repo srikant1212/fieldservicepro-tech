@@ -34,7 +34,6 @@ function AuthGuard() {
       <Stack.Screen name="availability" />
       <Stack.Screen name="onboarding" />
     </Stack>
-      <Toast />
   );
 }
 
@@ -42,6 +41,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthGuard />
+      <Toast />
     </GestureHandlerRootView>
   );
 }

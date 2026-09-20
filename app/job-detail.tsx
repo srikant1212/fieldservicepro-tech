@@ -26,6 +26,9 @@ export default function JobDetail() {
   const timerRef = useRef<any>(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [closingNotes, setClosingNotes] = useState('');
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [newMaterial, setNewMaterial] = useState({ name: '', qty: '1', cost: '' });
+  const [showMaterials, setShowMaterials] = useState(false);
 
   useFocusEffect(useCallback(() => { fetchJob(); }, [id]));
 
@@ -44,6 +47,9 @@ export default function JobDetail() {
         setPhotos(urls);
       }
     }
+    // Fetch materials
+    const { data: mats } = await supabase.from('job_materials').select('*').eq('job_id', id as string);
+    setMaterials(mats || []);
     setLoading(false);
   };
 
@@ -134,6 +140,27 @@ export default function JobDetail() {
       { text: 'Call', onPress: () => Linking.openURL(`tel:${job.customer_phone}`) },
     ]);
   };
+
+  const handleAddMaterial = async () => {
+    if (!newMaterial.name.trim()) return;
+    const { data } = await supabase.from('job_materials').insert({
+      job_id: id,
+      name: newMaterial.name.trim(),
+      quantity: parseInt(newMaterial.qty) || 1,
+      unit_cost: parseFloat(newMaterial.cost) || 0,
+      total_cost: (parseInt(newMaterial.qty)||1) * (parseFloat(newMaterial.cost)||0),
+      added_by: user?.id,
+    }).select().single();
+    if (data) setMaterials(m => [...m, data]);
+    setNewMaterial({ name: '', qty: '1', cost: '' });
+  };
+
+  const handleRemoveMaterial = async (matId: string) => {
+    await supabase.from('job_materials').delete().eq('id', matId);
+    setMaterials(m => m.filter(x => x.id !== matId));
+  };
+
+  const totalMaterialCost = materials.reduce((sum, m) => sum + (m.total_cost || 0), 0);
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
   if (!job) return <View style={styles.loading}><Text>Job not found</Text></View>;
@@ -230,6 +257,82 @@ export default function JobDetail() {
           )}
         </View>
 
+        {/* Materials / Parts Used */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="construct-outline" size={18} color="#0066FF" />
+              <Text style={styles.sectionTitle}>Materials & Parts</Text>
+              {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {totalMaterialCost > 0 && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
+              <Ionicons name={showMaterials ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
+            </View>
+          </TouchableOpacity>
+          {showMaterials && (
+            <View style={{ marginTop: 12, gap: 8 }}>
+              {materials.map(m => (
+                <View key={m.id} style={styles.materialRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B' }}>{m.name}</Text>
+                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity} × ${m.unit_cost} = ${m.total_cost}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => handleRemoveMaterial(m.id)}>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <View style={styles.addMaterialRow}>
+                <TextInput style={[styles.materialInput, { flex: 2 }]} placeholder="Material name" value={newMaterial.name} onChangeText={v => setNewMaterial(p => ({...p, name: v}))} />
+                <TextInput style={[styles.materialInput, { flex: 0.6 }]} placeholder="Qty" value={newMaterial.qty} onChangeText={v => setNewMaterial(p => ({...p, qty: v}))} keyboardType="numeric" />
+                <TextInput style={[styles.materialInput, { flex: 0.8 }]} placeholder="$Cost" value={newMaterial.cost} onChangeText={v => setNewMaterial(p => ({...p, cost: v}))} keyboardType="decimal-pad" />
+                <TouchableOpacity style={styles.addMaterialBtn} onPress={handleAddMaterial}>
+                  <Ionicons name="add" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Materials / Parts Used */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name="construct-outline" size={18} color="#0066FF" />
+              <Text style={styles.sectionTitle}>Materials & Parts</Text>
+              {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {totalMaterialCost > 0 && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
+              <Ionicons name={showMaterials ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
+            </View>
+          </TouchableOpacity>
+          {showMaterials && (
+            <View style={{ marginTop: 12, gap: 8 }}>
+              {materials.map(m => (
+                <View key={m.id} style={styles.materialRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B' }}>{m.name}</Text>
+                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity} × ${m.unit_cost} = ${m.total_cost}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => handleRemoveMaterial(m.id)}>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <View style={styles.addMaterialRow}>
+                <TextInput style={[styles.materialInput, { flex: 2 }]} placeholder="Material name" value={newMaterial.name} onChangeText={v => setNewMaterial(p => ({...p, name: v}))} />
+                <TextInput style={[styles.materialInput, { flex: 0.6 }]} placeholder="Qty" value={newMaterial.qty} onChangeText={v => setNewMaterial(p => ({...p, qty: v}))} keyboardType="numeric" />
+                <TextInput style={[styles.materialInput, { flex: 0.8 }]} placeholder="$Cost" value={newMaterial.cost} onChangeText={v => setNewMaterial(p => ({...p, cost: v}))} keyboardType="decimal-pad" />
+                <TouchableOpacity style={styles.addMaterialBtn} onPress={handleAddMaterial}>
+                  <Ionicons name="add" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
         <View style={{ height: 120 }} />
       </ScrollView>
 
@@ -309,6 +412,20 @@ const styles = StyleSheet.create({
   addPhotoBtnText: { fontSize: 13, fontWeight: '700', color: '#0066FF' },
   photoThumb: { width: 100, height: 100, borderRadius: 10 },
   addPhotoPlaceholder: { alignItems: 'center', padding: 24, gap: 8, borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', borderStyle: 'dashed' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  materialRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12 },
+  addMaterialRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  materialInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 8, fontSize: 13, backgroundColor: '#fff' },
+  addMaterialBtn: { backgroundColor: '#0066FF', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' },
+  badge: { backgroundColor: '#0066FF', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  materialRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12 },
+  addMaterialRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  materialInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 8, fontSize: 13, backgroundColor: '#fff' },
+  addMaterialBtn: { backgroundColor: '#0066FF', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' },
+  badge: { backgroundColor: '#0066FF', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
   addPhotoText: { fontSize: 13, color: '#94A3B8', textAlign: 'center' },
   bottomBar: { padding: 16, paddingBottom: 32, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#0066FF', borderRadius: 16, padding: 18 },

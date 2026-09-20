@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import Toast from 'react-native-toast-message';
 import { Stack } from 'expo-router';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter, useSegments } from 'expo-router';
@@ -33,6 +34,7 @@ function AuthGuard() {
       <Stack.Screen name="availability" />
       <Stack.Screen name="onboarding" />
     </Stack>
+      <Toast />
   );
 }
 

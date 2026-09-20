@@ -258,11 +258,11 @@ export default function JobDetail() {
         </View>
 
         {/* Materials / Parts Used */}
-        <View style={styles.section}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>
           <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="construct-outline" size={18} color="#0066FF" />
-              <Text style={styles.sectionTitle}>Materials & Parts</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B', marginBottom: 4 }}>Materials & Parts</Text>
               {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -296,11 +296,11 @@ export default function JobDetail() {
         </View>
 
         {/* Materials / Parts Used */}
-        <View style={styles.section}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>
           <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="construct-outline" size={18} color="#0066FF" />
-              <Text style={styles.sectionTitle}>Materials & Parts</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B', marginBottom: 4 }}>Materials & Parts</Text>
               {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -412,13 +412,6 @@ const styles = StyleSheet.create({
   addPhotoBtnText: { fontSize: 13, fontWeight: '700', color: '#0066FF' },
   photoThumb: { width: 100, height: 100, borderRadius: 10 },
   addPhotoPlaceholder: { alignItems: 'center', padding: 24, gap: 8, borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', borderStyle: 'dashed' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  materialRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12 },
-  addMaterialRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  materialInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 8, fontSize: 13, backgroundColor: '#fff' },
-  addMaterialBtn: { backgroundColor: '#0066FF', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' },
-  badge: { backgroundColor: '#0066FF', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   materialRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12 },
   addMaterialRow: { flexDirection: 'row', gap: 6, alignItems: 'center' },

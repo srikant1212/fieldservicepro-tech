@@ -31,10 +31,8 @@ function AuthGuard() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="job-detail" />
-      <Stack.Screen name="availability" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="edit-profile" />
-      <Stack.Screen name="availability" />
     </Stack>
   );
 }

@@ -52,11 +52,11 @@ export default function History() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                 <Text style={styles.jobTitle}>#{item.job_number} — {item.title}</Text>
                 <View style={{ backgroundColor: (STATUS_COLORS[item.status] || '#94A3B8')+'20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLORS[item.status] }}>{item.status.replace('_',' ').toUpperCase()}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLORS[item.status] || '#94A3B8' }}>{(item.status || '').replace('_',' ').toUpperCase()}</Text>
                 </View>
               </View>
               <Text style={styles.meta}>{item.customer_name}</Text>
-              {item.date && <Text style={styles.meta}>{new Date(item.date+'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</Text>}
+              {!!item.date && <Text style={styles.meta}>{new Date(item.date+'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</Text>}
               {item.estimate && <Text style={[styles.meta, { color: COLORS.success, fontWeight: '700' }]}>Est: ${item.estimate}</Text>}
             </TouchableOpacity>
           )}

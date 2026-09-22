@@ -199,7 +199,7 @@ export default function JobDetail() {
           <Text style={styles.customerName}>{job.customer_name}</Text>
           {job.address && <View style={styles.infoRow}><Ionicons name="location-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{job.address}</Text></View>}
           {job.date && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{new Date(job.date).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' })}{job.time_start ? ` · ${job.time_start.slice(0,5)}` : ''}</Text></View>}
-          {job.estimate > 0 && <View style={styles.infoRow}><Ionicons name="cash-outline" size={16} color="#64748B"/><Text style={styles.infoText}>Estimate: ${job.estimate}</Text></View>}
+          {job.estimate > 0 && user?.can_view_financials && <View style={styles.infoRow}><Ionicons name="cash-outline" size={16} color="#64748B"/><Text style={styles.infoText}>Estimate: ${job.estimate}</Text></View>}
           
           <View style={styles.actionBtns}>
             {job.customer_phone && <TouchableOpacity style={styles.actionBtn} onPress={handleCall}>

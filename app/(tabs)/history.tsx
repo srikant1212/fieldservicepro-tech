@@ -51,7 +51,7 @@ export default function History() {
             <TouchableOpacity style={styles.card} onPress={() => router.push({ pathname: '/job-detail', params: { id: item.id } } as any)}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                 <Text style={styles.jobTitle}>#{item.job_number} — {item.title}</Text>
-                <View style={{ backgroundColor: STATUS_COLORS[item.status]+'20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
+                <View style={{ backgroundColor: (STATUS_COLORS[item.status] || '#94A3B8')+'20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
                   <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLORS[item.status] }}>{item.status.replace('_',' ').toUpperCase()}</Text>
                 </View>
               </View>

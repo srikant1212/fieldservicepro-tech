@@ -73,7 +73,7 @@ export default function Dashboard() {
         ].map(s => (
           <View key={s.label} style={styles.statCard}>
             <Ionicons name={s.icon as any} size={22} color={s.color} />
-            <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
+            <Text style={styles.statValue}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
         ))}
@@ -170,8 +170,8 @@ const styles = StyleSheet.create({
   notifBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   statsRow: { flexDirection: 'row', backgroundColor: '#0066FF', paddingHorizontal: 16, paddingBottom: 20, gap: 10 },
   statCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 22, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.8)', textAlign: 'center', fontWeight: '600' },
+  statValue: { fontSize: 24, fontWeight: '900', color: '#fff' },
+  statLabel: { fontSize: 10, color: '#fff', textAlign: 'center', fontWeight: '700' },
   activeJobBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFBEB', margin: 16, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F59E0B' },
   activeJobLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   activeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#F59E0B' },

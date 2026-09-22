@@ -33,6 +33,7 @@ function AuthGuard() {
       <Stack.Screen name="job-detail" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="edit-profile" />
+      <Stack.Screen name="availability" />
     </Stack>
   );
 }

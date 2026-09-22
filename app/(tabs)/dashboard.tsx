@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -50,9 +50,14 @@ export default function Dashboard() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hey, {user?.display_name?.split(' ')[0]} 👋</Text>
-          <Text style={styles.orgName}>{org?.name || 'Field Service Pro'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {org?.logo_url ? (
+            <Image source={{ uri: org.logo_url }} style={{ width: 36, height: 36, borderRadius: 8, resizeMode: 'contain', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          ) : null}
+          <View>
+            <Text style={styles.greeting}>Hey, {user?.display_name?.split(' ')[0]} 👋</Text>
+            <Text style={styles.orgName}>{org?.name || 'Field Service Pro'}</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.notifBtn}>
           <Ionicons name="notifications-outline" size={24} color="#fff" />

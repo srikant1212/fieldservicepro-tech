@@ -25,6 +25,7 @@ export default function JobDetail() {
   const [timerRunning, setTimerRunning] = useState(false);
   const timerRef = useRef<any>(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [signerName, setSignerName] = useState('');
   const [closingNotes, setClosingNotes] = useState('');
   const [materials, setMaterials] = useState<any[]>([]);
   const [newMaterial, setNewMaterial] = useState({ name: '', qty: '1', cost: '' });
@@ -77,7 +78,7 @@ export default function JobDetail() {
     haptic.success();
     setTimerRunning(false);
     const completedAt = new Date().toISOString();
-    await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds } as any).eq('id', id as string);
+    await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null } as any).eq('id', id as string);
     setJob({ ...job, status: 'completed' });
     setShowCompleteModal(false);
     // Send completion email
@@ -368,6 +369,9 @@ export default function JobDetail() {
               placeholderTextColor="#CBD5E1" value={closingNotes} onChangeText={setClosingNotes}
               multiline numberOfLines={4} textAlignVertical="top" />
             <View style={styles.modalBtns}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 6, marginTop: 12 }}>CUSTOMER SIGNATURE (OPTIONAL)</Text>
+              <TextInput style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 12 }}
+                placeholder="Customer name (confirms job completion)" value={signerName} onChangeText={setSignerName} />
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowCompleteModal(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>

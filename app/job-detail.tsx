@@ -20,6 +20,7 @@ export default function JobDetail() {
   const [notes, setNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -163,6 +164,26 @@ export default function JobDetail() {
 
   const totalMaterialCost = materials.reduce((sum, m) => sum + (m.total_cost || 0), 0);
 
+  const photoModal = selectedPhoto ? (
+    <Modal visible={true} transparent animationType="fade" onRequestClose={() => setSelectedPhoto(null)}>
+      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}
+        onPress={() => setSelectedPhoto(null)} activeOpacity={1}>
+        <Image source={{ uri: selectedPhoto }} style={{ width: '100%', height: '80%', resizeMode: 'contain' }} />
+        <Text style={{ color: '#fff', marginTop: 16, fontSize: 14 }}>Tap to close</Text>
+      </TouchableOpacity>
+    </Modal>
+  ) : null;
+
+  const handleSendReport = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('send-job-report', {
+        body: { job_id: job.id, customer_email: job.customer_email, customer_name: job.customer_name, job_number: job.job_number }
+      });
+      if (error) throw error;
+      Alert.alert('Report Sent', `Job report sent to ${job.customer_email}`);
+    } catch (e: any) { Alert.alert('Error', e.message); }
+  };
+
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
   if (!job) return <View style={styles.loading}><Text>Job not found</Text></View>;
 
@@ -246,7 +267,9 @@ export default function JobDetail() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {photos.map((p, i) => (
-                  <Image key={i} source={{ uri: p }} style={styles.photoThumb} />
+                  <TouchableOpacity key={i} onPress={() => setSelectedPhoto(p)}>
+                    <Image source={{ uri: p }} style={styles.photoThumb} />
+                  </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>

@@ -124,6 +124,22 @@ export default function Profile() {
           </View>}
         </View>
 
+        {/* Quick Links */}
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0' }}>
+          {[
+            { label: 'Job History', icon: 'time-outline', route: '/history' },
+            { label: 'My Availability', icon: 'calendar-outline', route: '/availability' },
+            { label: 'Navigate to Job', icon: 'map-outline', route: '/map' },
+          ].map((item, i) => (
+            <TouchableOpacity key={item.label} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: '#E2E8F0' }}
+              onPress={() => router.push(item.route as any)}>
+              <Ionicons name={item.icon as any} size={20} color="#0066FF" style={{ marginRight: 12 }} />
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#1E293B' }}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />

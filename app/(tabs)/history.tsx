@@ -57,7 +57,7 @@ export default function History() {
               </View>
               <Text style={styles.meta}>{item.customer_name}</Text>
               {!!item.date && <Text style={styles.meta}>{new Date(item.date+'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</Text>}
-              {item.estimate && <Text style={[styles.meta, { color: COLORS.success, fontWeight: '700' }]}>Est: ${item.estimate}</Text>}
+              {!!item.estimate && <Text style={[styles.meta, { color: COLORS.success, fontWeight: '700' }]}>{`Est: $${item.estimate}`}</Text>}
             </TouchableOpacity>
           )}
         />

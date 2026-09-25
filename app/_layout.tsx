@@ -14,6 +14,15 @@ function AuthGuard() {
   useEffect(() => { initialize(); }, []);
 
   useEffect(() => {
+    if (user?.id) {
+      // Register push token
+      import('../lib/notifications').then(({ registerForPushNotifications }) => {
+        registerForPushNotifications(user.id).catch(() => {});
+      });
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';
     if (!user && !inAuth) router.replace('/(auth)/login');

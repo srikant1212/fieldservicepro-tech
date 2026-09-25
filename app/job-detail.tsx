@@ -8,8 +8,16 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 
-const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444' };
-const STATUS_LABELS: Record<string,string> = { scheduled:'Scheduled', in_progress:'In Progress', completed:'Completed', cancelled:'Cancelled' };
+const STATUS_COLORS: Record<string,string> = { 
+  new:'#6B7280', scheduled:'#8B5CF6', travelling:'#F59E0B', 
+  on_site:'#EF4444', in_progress:'#0066FF', completed:'#10B981', 
+  cancelled:'#EF4444', pending:'#F59E0B' 
+};
+const STATUS_LABELS: Record<string,string> = { 
+  new:'New', scheduled:'Scheduled', travelling:'Travelling', 
+  on_site:'On Site', in_progress:'In Progress', completed:'Completed', 
+  cancelled:'Cancelled', pending:'Pending' 
+};
 
 export default function JobDetail() {
   const { id } = useLocalSearchParams();
@@ -68,12 +76,22 @@ export default function JobDetail() {
 
   const handleStart = async () => {
     haptic.medium();
+    await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
+    setJob({ ...job, status: 'travelling' });
+  };
+
+  const handleOnSite = async () => {
+    haptic.medium();
+    await supabase.from('jobs').update({ status: 'on_site' } as any).eq('id', id as string);
+    setJob({ ...job, status: 'on_site' });
+  };
+
+  const handleStartWork = async () => {
+    haptic.medium();
     const startedAt = new Date().toISOString();
     await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
     setJob({ ...job, status: 'in_progress' });
-    setTimerRunning(true);
-    Alert.alert('⏱ Job Started!', 'Timer is now running');
-  };
+  };;
 
   const handleComplete = async () => {
     haptic.success();
@@ -362,10 +380,22 @@ export default function JobDetail() {
 
       {/* Bottom Action */}
       <View style={styles.bottomBar}>
-        {job.status === 'scheduled' && (
+        {(job.status === 'new' || job.status === 'scheduled' || job.status === 'pending') && (
           <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
-            <Ionicons name="play" size={20} color="#fff"/>
-            <Text style={styles.startBtnText}>Start Job</Text>
+            <Ionicons name="car-outline" size={20} color="#fff"/>
+            <Text style={styles.startBtnText}>🚗 Start Travel</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'travelling' && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#EF4444' }]} onPress={handleOnSite}>
+            <Ionicons name="location-outline" size={20} color="#fff"/>
+            <Text style={styles.startBtnText}>📍 Arrived On Site</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'on_site' && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#0066FF' }]} onPress={handleStartWork}>
+            <Ionicons name="construct-outline" size={20} color="#fff"/>
+            <Text style={styles.startBtnText}>🔧 Start Job</Text>
           </TouchableOpacity>
         )}
         {job.status === 'in_progress' && (

@@ -72,7 +72,9 @@ export default function Dashboard() {
           { label: 'Completed', value: completedJobs.length, icon: 'checkmark-circle-outline', color: '#10B981' },
         ].map(s => (
           <View key={s.label} style={styles.statCard}>
-            <Ionicons name={s.icon as any} size={22} color={s.color} />
+            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: s.color + '15', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={s.icon as any} size={20} color={s.color} />
+            </View>
             <Text style={styles.statValue}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
           </View>
@@ -168,10 +170,10 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 22, fontWeight: '800', color: '#fff' },
   orgName: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   notifBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-  statsRow: { flexDirection: 'row', backgroundColor: '#0066FF', paddingHorizontal: 16, paddingBottom: 20, gap: 10 },
-  statCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: 12, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 24, fontWeight: '900', color: '#fff' },
-  statLabel: { fontSize: 10, color: '#fff', textAlign: 'center', fontWeight: '700' },
+  statsRow: { flexDirection: 'row', backgroundColor: '#0066FF', paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', gap: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },
+  statValue: { fontSize: 26, fontWeight: '900', color: '#1E293B' },
+  statLabel: { fontSize: 10, color: '#64748B', textAlign: 'center', fontWeight: '600' },
   activeJobBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFBEB', margin: 16, borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: '#F59E0B' },
   activeJobLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   activeDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#F59E0B' },

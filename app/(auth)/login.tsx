@@ -10,6 +10,26 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  const handleReset = async () => {
+    if (!resetEmail.trim()) { Alert.alert('Required', 'Please enter your email'); return; }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim().toLowerCase(), {
+        redirectTo: 'https://fieldservicepro.work/reset-password',
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password) { Alert.alert('Required', 'Please enter email and password'); return; }
@@ -25,6 +45,53 @@ export default function Login() {
     }
   };
 
+  if (showReset) {
+    return (
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
+            <View style={styles.logoBox}>
+              <Ionicons name="key-outline" size={40} color="#fff" />
+            </View>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>Enter your email to receive a reset link</Text>
+          </View>
+          <View style={styles.form}>
+            {resetSent ? (
+              <>
+                <View style={{ alignItems: 'center', padding: 20 }}>
+                  <Ionicons name="mail-open-outline" size={48} color="#10B981" />
+                  <Text style={[styles.welcomeText, { marginTop: 12 }]}>Email Sent!</Text>
+                  <Text style={[styles.welcomeSub, { textAlign: 'center' }]}>Check your inbox and follow the reset link.</Text>
+                </View>
+                <TouchableOpacity style={styles.loginBtn} onPress={() => { setShowReset(false); setResetSent(false); }}>
+                  <Text style={styles.loginBtnText}>Back to Sign In</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={styles.field}>
+                  <Text style={styles.label}>Email Address</Text>
+                  <View style={styles.inputRow}>
+                    <Ionicons name="mail-outline" size={20} color="#94A3B8" style={{ marginRight: 10 }} />
+                    <TextInput style={styles.input} placeholder="your@email.com" placeholderTextColor="#94A3B8"
+                      value={resetEmail} onChangeText={setResetEmail} autoCapitalize="none" keyboardType="email-address" autoFocus />
+                  </View>
+                </View>
+                <TouchableOpacity style={[styles.btn, resetLoading && { opacity: 0.6 }]} onPress={handleReset} disabled={resetLoading}>
+                  {resetLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Send Reset Link</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowReset(false)} style={{ alignItems: 'center', marginTop: 16 }}>
+                  <Text style={{ color: '#0066FF', fontWeight: '600', fontSize: 14 }}>Back to Sign In</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -39,7 +106,7 @@ export default function Login() {
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.welcomeText}>Welcome back 👋</Text>
+          <Text style={styles.welcomeText}>Welcome back</Text>
           <Text style={styles.welcomeSub}>Sign in to view your jobs</Text>
 
           <View style={styles.field}>
@@ -65,6 +132,10 @@ export default function Login() {
 
           <TouchableOpacity style={[styles.loginBtn, loading && { opacity: 0.7 }]} onPress={handleLogin} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Sign In</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => { setResetEmail(email); setShowReset(true); }} style={{ alignItems: 'center', marginTop: 12, marginBottom: 8 }}>
+            <Text style={{ color: '#0066FF', fontWeight: '600', fontSize: 14, backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 }}>Forgot Password?</Text>
           </TouchableOpacity>
 
           <Text style={styles.helpText}>

@@ -78,7 +78,7 @@ export default function Login() {
                       value={resetEmail} onChangeText={setResetEmail} autoCapitalize="none" keyboardType="email-address" autoFocus />
                   </View>
                 </View>
-                <TouchableOpacity style={[styles.btn, resetLoading && { opacity: 0.6 }]} onPress={handleReset} disabled={resetLoading}>
+                <TouchableOpacity style={[styles.loginBtn, resetLoading && { opacity: 0.6 }]} onPress={handleReset} disabled={resetLoading}>
                   {resetLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Send Reset Link</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setShowReset(false)} style={{ alignItems: 'center', marginTop: 16 }}>

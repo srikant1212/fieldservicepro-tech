@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Keyboard
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { getOrgId } from '../../lib/getOrgId';
 import { useAuthStore } from '../../stores/authStore';
 import { haptic } from '../../lib/haptics';
 
@@ -17,16 +18,17 @@ export default function Chat() {
   useFocusEffect(useCallback(() => {
     fetchMessages();
     const sub = supabase.channel('chat')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tech_messages', filter: `organization_id=eq.${user?.organization_id}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tech_messages', filter: `organization_id=eq.${user?.organization_id || ''}` },
         payload => { setMessages(prev => [...prev, payload.new]); setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100); })
       .subscribe();
     return () => { supabase.removeChannel(sub); };
   }, [user?.id]));
 
   const fetchMessages = async () => {
-    if (!user?.organization_id) return;
+    const orgId = await getOrgId(user);
+    if (!orgId) return;
     const { data } = await supabase.from('tech_messages').select('*')
-      .eq('organization_id', user.organization_id)
+      .eq('organization_id', orgId)
       .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id},recipient_id.is.null`)
       .order('created_at', { ascending: true })
       .limit(100);
@@ -40,7 +42,7 @@ export default function Chat() {
     setSending(true);
     haptic.light();
     const msg = {
-      organization_id: user.organization_id,
+      organization_id: await getOrgId(user),
       sender_id: user.id,
       sender_name: user.display_name || 'Tech',
       sender_role: 'technician',

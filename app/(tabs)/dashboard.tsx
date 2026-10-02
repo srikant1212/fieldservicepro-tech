@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, A
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { getOrgId } from '../../lib/getOrgId';
 import { useAuthStore } from '../../stores/authStore';
 import { formatDate } from '../../lib/formatters';
 
@@ -25,7 +26,7 @@ export default function Dashboard() {
     try {
       const [jobsRes, orgRes] = await Promise.all([
         supabase.from('jobs').select('*').eq('assigned_to', user.id).order('date', { ascending: true }),
-        supabase.from('organizations').select('name, logo_url, brand_color').eq('id', user.organization_id || '').single(),
+        supabase.from('organizations').select('name, logo_url, brand_color').eq('id', await getOrgId(user) || '').single(),
       ]);
       setJobs(jobsRes.data || []);
       setOrg(orgRes.data);

@@ -54,7 +54,7 @@ export default function JobDetail() {
       setNotes(data.notes || '');
       // Load activity feed
       const { data: actData } = await supabase.from('job_activity_log')
-        .select('*').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
+        .select('*, profiles(display_name)').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
       setActivity(actData || []);
       setClosingNotes(data.closing_notes || '');
       if (data.status === 'in_progress') { setTimerRunning(true); }
@@ -172,7 +172,8 @@ export default function JobDetail() {
         job_id: id,
         user_id: user?.id,
         action: 'photo_added',
-        details: 'Photo uploaded by technician'
+        details: 'Photo uploaded by technician',
+        photo_url: urlData.publicUrl
       }); } catch {}
       haptic.light();
     } catch (e) { Alert.alert('Upload failed'); }
@@ -449,7 +450,16 @@ export default function JobDetail() {
                   <Ionicons name={a.action === 'note_added' ? 'document-text-outline' : a.action === 'photo_added' ? 'camera-outline' : 'time-outline'} size={16} color={a.action === 'note_added' ? '#0066FF' : a.action === 'photo_added' ? '#10B981' : '#F59E0B'} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#475569', marginBottom: 2 }}>
+                    {a.user_id === user?.id ? 'You' : a.profiles?.display_name || 'Team member'}
+                  </Text>
+                  {a.action === 'photo_added' && a.photo_url ? (
+                    <TouchableOpacity onPress={() => setSelectedPhoto(a.photo_url)}>
+                      <Image source={{ uri: a.photo_url }} style={{ width: 80, height: 60, borderRadius: 8, marginBottom: 4 }} />
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                  )}
                   <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{new Date(a.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>
               </View>

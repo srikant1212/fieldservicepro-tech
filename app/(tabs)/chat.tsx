@@ -29,7 +29,7 @@ export default function Chat() {
     if (!orgId) return;
     const { data } = await supabase.from('tech_messages').select('*')
       .eq('organization_id', orgId)
-      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id},recipient_id.is.null`)
+      .or(`sender_id.eq.${user?.id},recipient_id.eq.${user?.id},recipient_id.is.null`)
       .order('created_at', { ascending: true })
       .limit(100);
     setMessages(data || []);

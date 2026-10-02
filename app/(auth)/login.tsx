@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,9 +50,7 @@ export default function Login() {
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <View style={styles.logoBox}>
-              <Ionicons name="key-outline" size={40} color="#fff" />
-            </View>
+            <Image source={require('../../assets/images/icon.png')} style={{ width: 80, height: 80, borderRadius: 18, marginBottom: 4 }} />
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>Enter your email to receive a reset link</Text>
           </View>
@@ -97,9 +95,7 @@ export default function Login() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.logoBox}>
-            <Ionicons name="construct" size={40} color="#fff" />
-          </View>
+          <Image source={require('../../assets/images/icon.png')} style={{ width: 80, height: 80, borderRadius: 18, marginBottom: 4 }} />
           <Text style={styles.title}>FSP Technician</Text>
           <Text style={styles.subtitle}>Field Service Pro — Tech Portal</Text>
         </View>

@@ -168,12 +168,12 @@ export default function JobDetail() {
       const { data: urlData } = supabase.storage.from('job-photos').getPublicUrl(fileName);
       setPhotos(prev => [...prev, urlData.publicUrl]);
       // Log to activity feed
-      await supabase.from('job_activity_log').insert({
+      try { await supabase.from('job_activity_log').insert({
         job_id: id,
         user_id: user?.id,
         action: 'photo_added',
         details: 'Photo uploaded by technician'
-      }).catch(() => {});
+      }); } catch {}
       haptic.light();
     } catch (e) { Alert.alert('Upload failed'); }
     finally { setUploadingPhoto(false); }

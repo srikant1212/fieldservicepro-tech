@@ -26,6 +26,10 @@ export default function JobDetail() {
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
+  const [activity, setActivity] = useState<any[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+  const [showNoteInput, setShowNoteInput] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -48,6 +52,10 @@ export default function JobDetail() {
     if (data) {
       setJob(data);
       setNotes(data.notes || '');
+      // Load activity feed
+      const { data: actData } = await supabase.from('job_activity_log')
+        .select('*').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
+      setActivity(actData || []);
       setClosingNotes(data.closing_notes || '');
       if (data.status === 'in_progress') { setTimerRunning(true); }
       // Load photos
@@ -105,6 +113,23 @@ export default function JobDetail() {
     Alert.alert('✅ Job Completed!', 'Great work! Completion email sent to customer.');
   };
 
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    setAddingNote(true);
+    try {
+      await supabase.from('job_activity_log').insert({
+        job_id: id,
+        user_id: user?.id,
+        action: 'note_added',
+        details: newNote.trim()
+      });
+      setActivity(prev => [{ action: 'note_added', details: newNote.trim(), created_at: new Date().toISOString(), user_id: user?.id }, ...prev]);
+      setNewNote('');
+      setShowNoteInput(false);
+    } catch { Alert.alert('Error', 'Failed to save note'); }
+    finally { setAddingNote(false); }
+  };
+
   const handleSaveNotes = async () => {
     setSavingNotes(true);
     await supabase.from('jobs').update({ notes } as any).eq('id', id as string);
@@ -142,6 +167,13 @@ export default function JobDetail() {
       await supabase.storage.from('job-photos').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
       const { data: urlData } = supabase.storage.from('job-photos').getPublicUrl(fileName);
       setPhotos(prev => [...prev, urlData.publicUrl]);
+      // Log to activity feed
+      await supabase.from('job_activity_log').insert({
+        job_id: id,
+        user_id: user?.id,
+        action: 'photo_added',
+        details: 'Photo uploaded by technician'
+      }).catch(() => {});
       haptic.light();
     } catch (e) { Alert.alert('Upload failed'); }
     finally { setUploadingPhoto(false); }
@@ -372,6 +404,56 @@ export default function JobDetail() {
                 </TouchableOpacity>
               </View>
             </View>
+          )}
+        </View>
+
+        {/* Activity Feed */}
+        <View style={{ backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1E293B' }}>Activity Feed</Text>
+            <TouchableOpacity onPress={() => setShowNoteInput(!showNoteInput)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+              <Ionicons name="add" size={16} color="#0066FF" />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#0066FF' }}>Add Note</Text>
+            </TouchableOpacity>
+          </View>
+          {showNoteInput && (
+            <View style={{ marginBottom: 12 }}>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 14, color: '#1E293B', minHeight: 80, textAlignVertical: 'top', marginBottom: 8 }}
+                placeholder="Write a note..."
+                placeholderTextColor="#94A3B8"
+                value={newNote}
+                onChangeText={setNewNote}
+                multiline
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => { setShowNoteInput(false); setNewNote(''); }}
+                  style={{ flex: 1, padding: 10, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center' }}>
+                  <Text style={{ color: '#64748B', fontWeight: '600' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleAddNote} disabled={addingNote}
+                  style={{ flex: 2, padding: 10, borderRadius: 10, backgroundColor: '#0066FF', alignItems: 'center' }}>
+                  {addingNote ? <ActivityIndicator color="#fff" size="small" /> :
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>Save Note</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          {activity.length === 0 ? (
+            <Text style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', paddingVertical: 12 }}>No activity yet</Text>
+          ) : (
+            activity.map((a, i) => (
+              <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#F1F5F9' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: a.action === 'note_added' ? '#EFF6FF' : a.action === 'photo_added' ? '#F0FDF4' : '#FEF3C7', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name={a.action === 'note_added' ? 'document-text-outline' : a.action === 'photo_added' ? 'camera-outline' : 'time-outline'} size={16} color={a.action === 'note_added' ? '#0066FF' : a.action === 'photo_added' ? '#10B981' : '#F59E0B'} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                  <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{new Date(a.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
+              </View>
+            ))
           )}
         </View>
 

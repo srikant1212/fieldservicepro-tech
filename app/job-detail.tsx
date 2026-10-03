@@ -479,6 +479,8 @@ export default function JobDetail() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
+      {photoModal}
+
       {/* Bottom Action */}
       <View style={styles.bottomBar}>
         {(job.status === 'new' || job.status === 'scheduled' || job.status === 'pending') && (

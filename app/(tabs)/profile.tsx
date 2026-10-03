@@ -128,7 +128,7 @@ export default function Profile() {
         <View style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0' }}>
           {[
             { label: 'Edit Profile', icon: 'person-outline', route: '/edit-profile' },
-            { label: 'Job History', icon: 'time-outline', route: '/history' },
+            { label: 'Job History', icon: 'time-outline', route: '/job-history' },
             { label: 'My Availability', icon: 'calendar-outline', route: '/availability' },
             { label: 'Navigate to Job', icon: 'map-outline', route: '/map' },
           ].map((item, i) => (

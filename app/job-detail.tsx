@@ -453,11 +453,20 @@ export default function JobDetail() {
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#475569', marginBottom: 2 }}>
                     {a.user_id === user?.id ? 'You' : 'Team member'}
                   </Text>
-                  {a.action === 'photo_added' && a.photo_url ? (
-                    <TouchableOpacity onPress={() => setSelectedPhoto(a.photo_url)}>
-                      <Image source={{ uri: a.photo_url }} style={{ width: 80, height: 60, borderRadius: 8, marginBottom: 4 }} />
-                    </TouchableOpacity>
-                  ) : (
+                  {a.action === 'photo_added' ? (() => {
+                    let photoUrl = a.photo_url;
+                    if (!photoUrl) {
+                      try { const parsed = JSON.parse(a.details || ''); photoUrl = parsed.url; } catch {}
+                    }
+                    return photoUrl ? (
+                      <TouchableOpacity onPress={() => setSelectedPhoto(photoUrl)}>
+                        <Image source={{ uri: photoUrl }} style={{ width: 120, height: 90, borderRadius: 10, marginBottom: 4 }} />
+                        <Text style={{ fontSize: 11, color: '#94A3B8' }}>Tap to view</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                    );
+                  })() : (
                     <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
                   )}
                   <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{new Date(a.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>

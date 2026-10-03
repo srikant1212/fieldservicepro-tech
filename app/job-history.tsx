@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../stores/authStore';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../stores/authStore';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981', warning: '#F59E0B', danger: '#EF4444' };
 const STATUS_COLORS: Record<string,string> = { scheduled: COLORS.primary, in_progress: COLORS.warning, completed: COLORS.success, cancelled: COLORS.danger };

@@ -54,7 +54,7 @@ export default function JobDetail() {
       setNotes(data.notes || '');
       // Load activity feed
       const { data: actData } = await supabase.from('job_activity_log')
-        .select('*, profiles(display_name)').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
+        .select('*').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
       setActivity(actData || []);
       setClosingNotes(data.closing_notes || '');
       if (data.status === 'in_progress') { setTimerRunning(true); }
@@ -451,7 +451,7 @@ export default function JobDetail() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#475569', marginBottom: 2 }}>
-                    {a.user_id === user?.id ? 'You' : a.profiles?.display_name || 'Team member'}
+                    {a.user_id === user?.id ? 'You' : 'Team member'}
                   </Text>
                   {a.action === 'photo_added' && a.photo_url ? (
                     <TouchableOpacity onPress={() => setSelectedPhoto(a.photo_url)}>

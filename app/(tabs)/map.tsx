@@ -54,8 +54,13 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Job Sites</Text>
-        <Text style={styles.subtitle}>{jobs.length} active jobs</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginRight: 8 }}>
+          <Ionicons name="arrow-back" size={24} color="#1E293B" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.title}>My Job Sites</Text>
+          <Text style={styles.subtitle}>{jobs.length} active jobs</Text>
+        </View>
       </View>
 
       <MapView ref={mapRef} style={styles.map} initialRegion={region} showsUserLocation showsMyLocationButton>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Image, Platform, Linking, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Image, Platform, Linking, Modal, KeyboardAvoidingView } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -524,27 +524,42 @@ export default function JobDetail() {
       </View>
 
       {/* Complete Modal */}
-      <Modal visible={showCompleteModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+      <Modal visible={showCompleteModal} transparent animationType="slide" onRequestClose={() => setShowCompleteModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} activeOpacity={1} onPress={() => setShowCompleteModal(false)} />
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             <Text style={styles.modalTitle}>Complete Job</Text>
-            <Text style={styles.modalSub}>Add closing notes before finishing</Text>
-            <TextInput style={styles.closingNotesInput} placeholder="What was done? Any follow-up needed?"
-              placeholderTextColor="#CBD5E1" value={closingNotes} onChangeText={setClosingNotes}
-              multiline numberOfLines={4} textAlignVertical="top" />
-            <View style={styles.modalBtns}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 6, marginTop: 12 }}>CUSTOMER SIGNATURE (OPTIONAL)</Text>
-              <TextInput style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 12 }}
-                placeholder="Customer name (confirms job completion)" value={signerName} onChangeText={setSignerName} />
+            <Text style={styles.modalSub}>Add closing notes and customer signature before finishing</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 12 }}>CLOSING NOTES (OPTIONAL)</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 140 }}>
+              <TextInput
+                style={{ borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 14, color: '#1E293B', minHeight: 100, textAlignVertical: 'top' }}
+                placeholder="Describe work performed, parts used, follow-up needed..."
+                placeholderTextColor="#CBD5E1"
+                value={closingNotes}
+                onChangeText={setClosingNotes}
+                multiline
+                scrollEnabled={false}
+              />
+            </ScrollView>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 16 }}>CUSTOMER NAME (OPTIONAL)</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16, color: '#1E293B' }}
+              placeholder="Customer name confirms job completion"
+              placeholderTextColor="#CBD5E1"
+              value={signerName}
+              onChangeText={setSignerName}
+            />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowCompleteModal(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleComplete}>
-                <Text style={styles.modalConfirmText}>Complete</Text>
+                <Text style={styles.modalConfirmText}>Complete Job</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

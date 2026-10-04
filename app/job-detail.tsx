@@ -86,6 +86,12 @@ export default function JobDetail() {
     haptic.medium();
     await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
     setJob({ ...job, status: 'travelling' });
+    // Notify customer team member is on the way
+    if (job?.customer_email) {
+      supabase.functions.invoke('send-notification-email', {
+        body: { type: 'technician_on_the_way', job_id: id }
+      }).catch(() => {});
+    }
   };
 
   const handleOnSite = async () => {
@@ -108,9 +114,11 @@ export default function JobDetail() {
     await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null } as any).eq('id', id as string);
     setJob({ ...job, status: 'completed' });
     setShowCompleteModal(false);
-    // Send completion email
-    supabase.functions.invoke('send-job-notification', { body: { job_id: id, type: 'completed' } }).catch(() => {});
-    Alert.alert('✅ Job Completed!', 'Great work! Completion email sent to customer.');
+    // Send professional job completed email — matches web and main app flow
+    supabase.functions.invoke('send-notification-email', {
+      body: { type: 'job_completed', job_id: id }
+    }).catch(() => {});
+    Alert.alert('✅ Job Completed!', 'Completion email sent to customer.');
   };
 
   const handleAddNote = async () => {

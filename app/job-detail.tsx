@@ -103,9 +103,15 @@ export default function JobDetail() {
   const handleStartWork = async () => {
     haptic.medium();
     const startedAt = new Date().toISOString();
-    await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
-    setJob({ ...job, status: 'in_progress' });
-  };;
+    const { error } = await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
+    if (!error) {
+      setJob({ ...job, status: 'in_progress' });
+      setTimerRunning(true);
+      await supabase.from('job_activity_log').insert({
+        job_id: id, user_id: user?.id, action: 'started', details: 'Job started by technician'
+      });
+    }
+  };
 
   const handleComplete = async () => {
     haptic.success();

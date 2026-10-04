@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
+import { getOrgId } from '../lib/getOrgId';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 
@@ -96,10 +97,18 @@ export default function JobDetail() {
     await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
     setJob({ ...job, status: 'travelling' });
     // Notify customer team member is on the way
-    // Edge function handles customer email lookup from customers table
     supabase.functions.invoke('send-notification-email', {
       body: { type: 'technician_on_the_way', job_id: id }
     }).catch(() => {});
+    if (job?.customer_phone) {
+      getOrgId(user).then(orgId => {
+        supabase.from('organizations').select('name, phone').eq('id', orgId || '').single().then(({ data: orgData }) => {
+          const cn = (orgData as any)?.name || 'Field Service Pro';
+          const cp = (orgData as any)?.phone || '';
+          supabase.functions.invoke('send-sms', { body: { to: job.customer_phone, message: `Hi ${job.customer_name || 'Customer'}, your service provider is on the way to ${job.address || 'your location'}. Queries? Call ${cp} - via Field Service Pro for ${cn}`, organization_id: orgId, event_type: 'customer_on_the_way' } }).catch(() => {});
+        });
+      }).catch(() => {});
+    }
   };
 
   const handleOnSite = async () => {

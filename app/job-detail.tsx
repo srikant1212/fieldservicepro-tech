@@ -96,11 +96,10 @@ export default function JobDetail() {
     await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
     setJob({ ...job, status: 'travelling' });
     // Notify customer team member is on the way
-    if (job?.customer_email) {
-      supabase.functions.invoke('send-notification-email', {
-        body: { type: 'technician_on_the_way', job_id: id }
-      }).catch(() => {});
-    }
+    // Edge function handles customer email lookup from customers table
+    supabase.functions.invoke('send-notification-email', {
+      body: { type: 'technician_on_the_way', job_id: id }
+    }).catch(() => {});
   };
 
   const handleOnSite = async () => {

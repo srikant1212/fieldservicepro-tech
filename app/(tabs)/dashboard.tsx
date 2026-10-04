@@ -35,8 +35,8 @@ export default function Dashboard() {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const todayJobs = jobs.filter(j => j.date === today);
-  const upcomingJobs = jobs.filter(j => j.date > today && j.status !== 'completed');
+  const todayJobs = jobs.filter(j => j.date === today && j.status !== 'cancelled' && j.status !== 'completed');
+  const upcomingJobs = jobs.filter(j => j.date > today && j.status !== 'completed' && j.status !== 'cancelled');
   const completedJobs = jobs.filter(j => j.status === 'completed');
   const activeJob = jobs.find(j => j.status === 'in_progress');
 

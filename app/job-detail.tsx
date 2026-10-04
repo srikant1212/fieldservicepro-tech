@@ -80,6 +80,15 @@ export default function JobDetail() {
     return () => clearInterval(timerRef.current);
   }, [timerRunning]);
 
+  // Recalculate timer from started_at when app comes back to foreground
+  useEffect(() => {
+    if (job?.started_at && job?.status === 'in_progress') {
+      const elapsed = Math.floor((Date.now() - new Date(job.started_at).getTime()) / 1000);
+      setTimerSeconds(elapsed);
+      setTimerRunning(true);
+    }
+  }, [job?.started_at, job?.status]);
+
   const formatTimer = (s: number) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
   const handleStart = async () => {

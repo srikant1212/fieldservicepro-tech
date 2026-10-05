@@ -141,7 +141,15 @@ export default function JobDetail() {
     await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null } as any).eq('id', id as string);
     setJob({ ...job, status: 'completed' });
     setShowCompleteModal(false);
-    // Send professional job completed email — matches web and main app flow
+    // Auto-save PDF report to storage
+    supabase.functions.invoke('send-job-report', {
+      body: { job_id: id, customer_email: job?.customer_email, customer_name: job?.customer_name, job_number: job?.job_number, save_only: true }
+    }).then((res: any) => {
+      if (res?.data?.report_url) {
+        supabase.from('jobs').update({ report_url: res.data.report_url } as any).eq('id', id as string).then(() => {});
+      }
+    }).catch(() => {});
+    // Send professional job completed email
     supabase.functions.invoke('send-notification-email', {
       body: { type: 'job_completed', job_id: id }
     }).catch(() => {});

@@ -55,7 +55,7 @@ export default function JobDetail() {
       setNotes(data.notes || '');
       // Load activity feed
       const { data: actData } = await supabase.from('job_activity_log')
-        .select('*').eq('job_id', id).order('created_at', { ascending: false }).limit(20);
+        .select('*').eq('job_id', id as string).order('created_at', { ascending: false }).limit(20);
       setActivity(actData || []);
       setClosingNotes(data.closing_notes || '');
       if (data.status === 'in_progress') { setTimerRunning(true); }
@@ -122,11 +122,15 @@ export default function JobDetail() {
     const startedAt = new Date().toISOString();
     const { error } = await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
     if (!error) {
-      setJob({ ...job, status: 'in_progress' });
+      setJob((prev: any) => ({ ...prev, status: 'in_progress' }));
       setTimerRunning(true);
-      await supabase.from('job_activity_log').insert({
-        job_id: id, user_id: user?.id, action: 'started', details: 'Job started by technician'
-      });
+      try {
+        await supabase.from('job_activity_log').insert({
+          job_id: id, user_id: user?.id, action: 'started', details: 'Job started by technician'
+        });
+      } catch {}
+    } else {
+      Alert.alert('Error', 'Failed to start job. Please try again.');
     }
   };
 
@@ -141,7 +145,9 @@ export default function JobDetail() {
     supabase.functions.invoke('send-notification-email', {
       body: { type: 'job_completed', job_id: id }
     }).catch(() => {});
-    Alert.alert('✅ Job Completed!', 'Completion email sent to customer.');
+    Alert.alert('✅ Job Completed!', 'Completion email sent to customer.', [
+      { text: 'OK', onPress: () => router.back() }
+    ]);
   };
 
   const handleAddNote = async () => {

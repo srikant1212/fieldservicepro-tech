@@ -121,9 +121,21 @@ export default function Dashboard() {
                 {job.address ? <View style={styles.jobMeta}><Ionicons name="location-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText} numberOfLines={1}>{job.address}</Text></View> : null}
                 {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
                 
-                {job.status === 'scheduled' && (
+                {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
+                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStatusUpdate(job.id, 'travelling')}>
+                    <Ionicons name="car-outline" size={14} color="#fff" />
+                    <Text style={styles.startBtnText}>Start Travel</Text>
+                  </TouchableOpacity>
+                )}
+                {job.status === 'travelling' && (
+                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#EF4444' }]} onPress={() => handleStatusUpdate(job.id, 'on_site')}>
+                    <Ionicons name="location-outline" size={14} color="#fff" />
+                    <Text style={styles.startBtnText}>Arrived On Site</Text>
+                  </TouchableOpacity>
+                )}
+                {job.status === 'on_site' && (
                   <TouchableOpacity style={styles.startBtn} onPress={() => handleStatusUpdate(job.id, 'in_progress')}>
-                    <Ionicons name="play" size={14} color="#fff" />
+                    <Ionicons name="construct-outline" size={14} color="#fff" />
                     <Text style={styles.startBtnText}>Start Job</Text>
                   </TouchableOpacity>
                 )}

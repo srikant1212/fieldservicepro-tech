@@ -231,6 +231,40 @@ export default function JobDetail() {
     Linking.openURL(url);
   };
 
+  const handleSendETA = async () => {
+    if (!job?.customer_email) { Alert.alert('No email', 'No customer email on this job'); return; }
+    try {
+      await supabase.functions.invoke('send-notification-email', {
+        body: { type: 'eta_update', job_id: id }
+      });
+      Alert.alert('✅ Sent', 'ETA notification sent to customer');
+    } catch { Alert.alert('Error', 'Failed to send ETA'); }
+  };
+
+  const handleRevertStatus = () => {
+    const statusMap: Record<string,string> = {
+      travelling: 'scheduled',
+      on_site: 'travelling',
+      in_progress: 'on_site',
+    };
+    const prevStatus = statusMap[job?.status || ''];
+    if (!prevStatus) return;
+    Alert.alert(
+      'Revert Status',
+      `Go back to "${prevStatus.replace('_', ' ')}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Revert', style: 'destructive', onPress: async () => {
+          await supabase.from('jobs').update({ status: prevStatus } as any).eq('id', id as string);
+          setJob((prev: any) => ({ ...prev, status: prevStatus }));
+          await supabase.from('job_activity_log').insert({
+            job_id: id, user_id: user?.id, action: prevStatus, details: `Status reverted to ${prevStatus}`
+          });
+        }}
+      ]
+    );
+  };
+
   const handleCall = () => {
     if (!job?.customer_phone) { Alert.alert('No phone number'); return; }
     Alert.alert('Call Customer', job.customer_phone, [
@@ -452,6 +486,33 @@ export default function JobDetail() {
             </View>
           )}
         </View>
+
+        {/* Quick Actions */}
+        {job.status !== 'completed' && job.status !== 'cancelled' && (
+          <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 12 }}>
+            {job.customer_phone ? (
+              <TouchableOpacity onPress={handleCall}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                <Ionicons name="call-outline" size={16} color="#10B981" />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>Call</Text>
+              </TouchableOpacity>
+            ) : null}
+            {job.customer_email && (job.status === 'travelling' || job.status === 'on_site' || job.status === 'in_progress') ? (
+              <TouchableOpacity onPress={handleSendETA}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                <Ionicons name="time-outline" size={16} color="#0066FF" />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#0066FF' }}>Send ETA</Text>
+              </TouchableOpacity>
+            ) : null}
+            {['travelling','on_site','in_progress'].includes(job.status) ? (
+              <TouchableOpacity onPress={handleRevertStatus}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FEE2E2' }}>
+                <Ionicons name="arrow-undo-outline" size={16} color="#EF4444" />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#EF4444' }}>Revert</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
 
         {/* Activity Feed */}
         <View style={{ backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>

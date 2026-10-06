@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { startJob, notifyOnTheWay, updateJob } from '../lib/jobActions';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
+import { toast } from '../lib/toast';
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', travelling:'#F59E0B', 
@@ -138,9 +139,9 @@ export default function JobDetail() {
     supabase.functions.invoke('send-notification-email', {
       body: { type: 'job_completed', job_id: id }
     }).catch(() => {});
-    Alert.alert('✅ Job Completed!', 'Completion email sent to customer.', [
-      { text: 'OK', onPress: () => router.back() }
-    ]);
+    toast.success('Job completed', 'Completion email sent to customer');
+    // Dashboard refetches jobs on focus, so it shows the updated status
+    router.dismissTo('/(tabs)/dashboard' as any);
   };
 
   const handleAddNote = async () => {
@@ -231,14 +232,20 @@ export default function JobDetail() {
     Linking.openURL(url);
   };
 
-  const handleSendETA = async () => {
+  const handleSendETA = () => {
     if (!job?.customer_email) { Alert.alert('No email', 'No customer email on this job'); return; }
-    try {
-      await supabase.functions.invoke('send-notification-email', {
-        body: { type: 'eta_update', job_id: id }
-      });
-      Alert.alert('✅ Sent', 'ETA notification sent to customer');
-    } catch { Alert.alert('Error', 'Failed to send ETA'); }
+    Alert.alert('Send ETA', 'Send ETA notification to customer?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send', onPress: async () => {
+        try {
+          const { error } = await supabase.functions.invoke('send-notification-email', {
+            body: { type: 'eta_update', job_id: id }
+          });
+          if (error) throw error;
+          toast.success('ETA sent', 'Notification sent to customer');
+        } catch { Alert.alert('Error', 'Failed to send ETA'); }
+      }}
+    ]);
   };
 
   const handleRevertStatus = () => {

@@ -152,7 +152,7 @@ export default function Profile() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>FSP Technician v1.0.0</Text>
+        <Text style={styles.version}>FSP Technician v1.1.0</Text>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>

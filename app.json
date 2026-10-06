@@ -2,7 +2,7 @@
   "expo": {
     "name": "FSP Technician",
     "slug": "fsp-technician",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "fsptech",
@@ -15,6 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "work.fieldservicepro.tech",
+      "buildNumber": "15",
       "infoPlist": {
         "NSCameraUsageDescription": "Take before/after photos for jobs",
         "NSPhotoLibraryUsageDescription": "Attach photos to jobs",

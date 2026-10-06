@@ -20,7 +20,6 @@
         "NSCameraUsageDescription": "Take before/after photos for jobs",
         "NSPhotoLibraryUsageDescription": "Attach photos to jobs",
         "NSLocationWhenInUseUsageDescription": "Navigate to job sites",
-        "NSMicrophoneUsageDescription": "Voice notes on jobs",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -55,7 +54,9 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Take job photos"
+          "cameraPermission": "Take job photos",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       "expo-notifications",

@@ -197,22 +197,49 @@ export default function JobDetail() {
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
-    const { error } = await supabase.from('jobs').update({ notes } as any).eq('id', id as string);
+    // Job notes are shared with the office, who may have added to them since this screen loaded.
+    // Read the latest copy first and merge, so saving here can never wipe someone else's notes.
+    const loaded: string = job?.notes || '';
+    const { data: latestRow, error: readError } = await supabase.from('jobs').select('notes').eq('id', id as string).single();
+    if (readError) {
+      setSavingNotes(false);
+      Alert.alert('Error', 'Failed to save notes');
+      return;
+    }
+    const latest: string = (latestRow as any)?.notes || '';
+    let merged = notes;
+    let added = notes.trim();
+    if (latest !== loaded) {
+      if (notes.startsWith(loaded)) {
+        // Only added to the end: put the addition after the latest saved notes
+        added = notes.slice(loaded.length).trim();
+        merged = added ? `${latest}\n${added}` : latest;
+      } else if (notes !== loaded) {
+        // Edited in the middle while someone else also changed them: keep both versions
+        merged = `${latest}\n${notes}`.trim();
+      } else {
+        merged = latest;
+        added = '';
+      }
+    } else if (notes.startsWith(loaded)) {
+      added = notes.slice(loaded.length).trim();
+    }
+    const { error } = await supabase.from('jobs').update({ notes: merged } as any).eq('id', id as string);
     if (error) {
       setSavingNotes(false);
       Alert.alert('Error', 'Failed to save notes');
       return;
     }
-    const trimmed = notes.trim();
-    if (trimmed && trimmed !== (job?.notes || '').trim()) {
+    if (added && notes.trim() !== loaded.trim()) {
       const { error: logError } = await supabase.from('job_activity_log').insert({
-        job_id: id, user_id: user?.id, action: 'note_added', details: trimmed
+        job_id: id, user_id: user?.id, action: 'note_added', details: added
       });
       if (!logError) {
-        setActivity(prev => [{ action: 'note_added', details: trimmed, created_at: new Date().toISOString(), user_id: user?.id }, ...prev]);
+        setActivity(prev => [{ action: 'note_added', details: added, created_at: new Date().toISOString(), user_id: user?.id }, ...prev]);
       }
     }
-    setJob((prev: any) => ({ ...prev, notes }));
+    setNotes(merged);
+    setJob((prev: any) => ({ ...prev, notes: merged }));
     setSavingNotes(false);
     haptic.light();
   };

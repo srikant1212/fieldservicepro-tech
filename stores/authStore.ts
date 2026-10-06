@@ -10,6 +10,10 @@ interface User {
   avatar_url?: string;
   phone?: string;
   skills?: string[];
+  bio?: string;
+  vehicle_type?: string;
+  license_number?: string;
+  abn?: string;
   employment_type?: string;
   can_collect_payment?: boolean;
   can_send_invoice?: boolean;
@@ -57,6 +61,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             avatar_url: profile?.avatar_url,
             phone: profile?.phone,
             skills: profile?.skills || [],
+            bio: profile?.bio || '',
+            vehicle_type: profile?.vehicle_type || '',
+            license_number: profile?.license_number || '',
+            abn: profile?.abn || '',
             employment_type: profile?.employment_type || 'employee',
             can_collect_payment: profile?.can_collect_payment || false,
             can_send_invoice: profile?.can_send_invoice || false,
@@ -99,6 +107,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         avatar_url: profile?.avatar_url,
         phone: profile?.phone,
         skills: profile?.skills || [],
+        bio: profile?.bio || '',
+        vehicle_type: profile?.vehicle_type || '',
+        license_number: profile?.license_number || '',
+        abn: profile?.abn || '',
         employment_type: profile?.employment_type || 'employee',
         can_collect_payment: profile?.can_collect_payment || false,
         can_send_invoice: profile?.can_send_invoice || false,

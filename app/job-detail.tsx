@@ -103,13 +103,19 @@ export default function JobDetail() {
 
   const formatTimer = (s: number) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
-  const handleStart = async () => {
-    haptic.medium();
-    const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
-    if (error) { Alert.alert('Error', 'Failed to start travel. Please try again.'); return; }
-    setJob((prev: any) => ({ ...prev, status: 'travelling' }));
-    // Notify customer team member is on the way
-    notifyOnTheWay(job, user);
+  // Starting travel emails and texts the customer, so ask first
+  const handleStart = () => {
+    Alert.alert('Start Travel?', 'This will notify the customer you are on the way.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: async () => {
+        haptic.medium();
+        const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
+        if (error) { Alert.alert('Error', 'Failed to start travel. Please try again.'); return; }
+        setJob((prev: any) => ({ ...prev, status: 'travelling' }));
+        // Notify customer team member is on the way
+        notifyOnTheWay(job, user);
+      }},
+    ]);
   };
 
   const handleOnSite = async () => {

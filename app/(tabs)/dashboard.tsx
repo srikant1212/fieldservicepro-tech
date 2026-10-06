@@ -54,11 +54,17 @@ export default function Dashboard() {
     fetchData();
   };
 
-  const handleStartTravel = async (job: any) => {
-    const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', job.id);
-    if (error) Alert.alert('Error', 'Failed to start travel. Please try again.');
-    else notifyOnTheWay(job, user);
-    fetchData();
+  // Starting travel emails and texts the customer, so ask first
+  const handleStartTravel = (job: any) => {
+    Alert.alert('Start Travel?', 'This will notify the customer you are on the way.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: async () => {
+        const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', job.id);
+        if (error) Alert.alert('Error', 'Failed to start travel. Please try again.');
+        else notifyOnTheWay(job, user);
+        fetchData();
+      }},
+    ]);
   };
 
   const handleStartJob = async (jobId: string) => {

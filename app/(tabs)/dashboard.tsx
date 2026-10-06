@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image, Alert } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { getOrgId } from '../../lib/getOrgId';
+import { startJob, notifyOnTheWay } from '../../lib/jobActions';
 import { useAuthStore } from '../../stores/authStore';
 import { formatDate } from '../../lib/formatters';
 
@@ -42,6 +43,19 @@ export default function Dashboard() {
 
   const handleStatusUpdate = async (jobId: string, status: string) => {
     await supabase.from('jobs').update({ status } as any).eq('id', jobId);
+    fetchData();
+  };
+
+  const handleStartTravel = async (job: any) => {
+    const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', job.id);
+    if (error) Alert.alert('Error', 'Failed to start travel. Please try again.');
+    else notifyOnTheWay(job, user);
+    fetchData();
+  };
+
+  const handleStartJob = async (jobId: string) => {
+    const { error } = await startJob(jobId, user?.id);
+    if (error) Alert.alert('Error', 'Failed to start job. Please try again.');
     fetchData();
   };
 
@@ -122,7 +136,7 @@ export default function Dashboard() {
                 {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
                 
                 {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
-                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStatusUpdate(job.id, 'travelling')}>
+                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStartTravel(job)}>
                     <Ionicons name="car-outline" size={14} color="#fff" />
                     <Text style={styles.startBtnText}>Start Travel</Text>
                   </TouchableOpacity>
@@ -134,7 +148,7 @@ export default function Dashboard() {
                   </TouchableOpacity>
                 )}
                 {job.status === 'on_site' && (
-                  <TouchableOpacity style={styles.startBtn} onPress={() => handleStatusUpdate(job.id, 'in_progress')}>
+                  <TouchableOpacity style={styles.startBtn} onPress={() => handleStartJob(job.id)}>
                     <Ionicons name="construct-outline" size={14} color="#fff" />
                     <Text style={styles.startBtnText}>Start Job</Text>
                   </TouchableOpacity>

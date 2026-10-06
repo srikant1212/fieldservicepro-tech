@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Image, Platform, Linking, Modal, KeyboardAvoidingView } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
-import { getOrgId } from '../lib/getOrgId';
+import { startJob, notifyOnTheWay, updateJob } from '../lib/jobActions';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 
@@ -36,8 +36,6 @@ export default function JobDetail() {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const timerRef = useRef<any>(null);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [signerName, setSignerName] = useState('');
   const [closingNotes, setClosingNotes] = useState('');
@@ -58,7 +56,6 @@ export default function JobDetail() {
         .select('*').eq('job_id', id as string).order('created_at', { ascending: false }).limit(20);
       setActivity(actData || []);
       setClosingNotes(data.closing_notes || '');
-      if (data.status === 'in_progress') { setTimerRunning(true); }
       // Load photos
       const { data: files } = await supabase.storage.from('job-photos').list(`${id}/`);
       if (files?.length) {
@@ -72,23 +69,19 @@ export default function JobDetail() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (timerRunning) {
-      timerRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [timerRunning]);
+  // Timer is always computed from the persisted start time, so it survives screen switches and restarts.
+  // Falls back to the 'started' activity entry if the jobs.started_at column isn't populated.
+  const jobStartedAt: string | null = job?.status === 'in_progress'
+    ? (job.started_at || activity.find(a => a.action === 'started')?.created_at || null)
+    : null;
 
-  // Recalculate timer from started_at when app comes back to foreground
   useEffect(() => {
-    if (job?.started_at && job?.status === 'in_progress') {
-      const elapsed = Math.floor((Date.now() - new Date(job.started_at).getTime()) / 1000);
-      setTimerSeconds(elapsed);
-      setTimerRunning(true);
-    }
-  }, [job?.started_at, job?.status]);
+    if (!jobStartedAt) return;
+    const tick = () => setTimerSeconds(Math.max(0, Math.floor((Date.now() - new Date(jobStartedAt).getTime()) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [jobStartedAt]);
 
   const formatTimer = (s: number) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 
@@ -97,18 +90,7 @@ export default function JobDetail() {
     await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
     setJob({ ...job, status: 'travelling' });
     // Notify customer team member is on the way
-    supabase.functions.invoke('send-notification-email', {
-      body: { type: 'technician_on_the_way', job_id: id }
-    }).catch(() => {});
-    if (job?.customer_phone) {
-      getOrgId(user).then(orgId => {
-        supabase.from('organizations').select('name, phone').eq('id', orgId || '').single().then(({ data: orgData }) => {
-          const cn = (orgData as any)?.name || 'Field Service Pro';
-          const cp = (orgData as any)?.phone || '';
-          supabase.functions.invoke('send-sms', { body: { to: job.customer_phone, message: `Hi ${job.customer_name || 'Customer'}, your service provider is on the way to ${job.address || 'your location'}. Queries? Call ${cp} - via Field Service Pro for ${cn}`, organization_id: orgId, event_type: 'customer_on_the_way' } }).catch(() => {});
-        });
-      }).catch(() => {});
-    }
+    notifyOnTheWay(job, user);
   };
 
   const handleOnSite = async () => {
@@ -119,28 +101,31 @@ export default function JobDetail() {
 
   const handleStartWork = async () => {
     haptic.medium();
-    const startedAt = new Date().toISOString();
-    const { error } = await supabase.from('jobs').update({ status: 'in_progress', started_at: startedAt } as any).eq('id', id as string);
+    const { error, startedAt } = await startJob(id as string, user?.id);
     if (!error) {
-      setJob((prev: any) => ({ ...prev, status: 'in_progress' }));
-      setTimerRunning(true);
-      try {
-        await supabase.from('job_activity_log').insert({
-          job_id: id, user_id: user?.id, action: 'started', details: 'Job started by technician'
-        });
-      } catch {}
+      setJob((prev: any) => ({ ...prev, status: 'in_progress', started_at: startedAt }));
+      setActivity(prev => [{ action: 'started', details: 'Job started by technician', created_at: startedAt, user_id: user?.id }, ...prev]);
     } else {
       Alert.alert('Error', 'Failed to start job. Please try again.');
     }
   };
 
   const handleComplete = async () => {
-    haptic.success();
-    setTimerRunning(false);
     const completedAt = new Date().toISOString();
-    await supabase.from('jobs').update({ status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null } as any).eq('id', id as string);
-    setJob({ ...job, status: 'completed' });
+    const { error } = await updateJob(id as string,
+      { status: 'completed', closing_notes: closingNotes },
+      { completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null });
+    if (error) {
+      haptic.error();
+      Alert.alert('Error', 'Failed to complete job. Please try again.');
+      return;
+    }
+    haptic.success();
+    setJob((prev: any) => ({ ...prev, status: 'completed', completed_at: completedAt }));
     setShowCompleteModal(false);
+    supabase.from('job_activity_log').insert({
+      job_id: id, user_id: user?.id, action: 'completed', details: 'Job completed by technician'
+    }).then(() => {});
     // Auto-save PDF report to storage
     supabase.functions.invoke('send-job-report', {
       body: { job_id: id, customer_email: job?.customer_email, customer_name: job?.customer_name, job_number: job?.job_number, save_only: true }
@@ -162,12 +147,13 @@ export default function JobDetail() {
     if (!newNote.trim()) return;
     setAddingNote(true);
     try {
-      await supabase.from('job_activity_log').insert({
+      const { error } = await supabase.from('job_activity_log').insert({
         job_id: id,
         user_id: user?.id,
         action: 'note_added',
         details: newNote.trim()
       });
+      if (error) throw error;
       setActivity(prev => [{ action: 'note_added', details: newNote.trim(), created_at: new Date().toISOString(), user_id: user?.id }, ...prev]);
       setNewNote('');
       setShowNoteInput(false);
@@ -177,10 +163,24 @@ export default function JobDetail() {
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
-    await supabase.from('jobs').update({ notes } as any).eq('id', id as string);
+    const { error } = await supabase.from('jobs').update({ notes } as any).eq('id', id as string);
+    if (error) {
+      setSavingNotes(false);
+      Alert.alert('Error', 'Failed to save notes');
+      return;
+    }
+    const trimmed = notes.trim();
+    if (trimmed && trimmed !== (job?.notes || '').trim()) {
+      const { error: logError } = await supabase.from('job_activity_log').insert({
+        job_id: id, user_id: user?.id, action: 'note_added', details: trimmed
+      });
+      if (!logError) {
+        setActivity(prev => [{ action: 'note_added', details: trimmed, created_at: new Date().toISOString(), user_id: user?.id }, ...prev]);
+      }
+    }
+    setJob((prev: any) => ({ ...prev, notes }));
     setSavingNotes(false);
     haptic.light();
-    Alert.alert('✅ Saved', 'Notes updated');
   };
 
   const handlePickPhoto = async () => {
@@ -449,54 +449,9 @@ export default function JobDetail() {
           )}
         </View>
 
-        {/* Materials / Parts Used */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>
-          <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Ionicons name="construct-outline" size={18} color="#0066FF" />
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#1E293B', marginBottom: 4 }}>Materials & Parts</Text>
-              {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {totalMaterialCost > 0 && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
-              <Ionicons name={showMaterials ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
-            </View>
-          </TouchableOpacity>
-          {showMaterials && (
-            <View style={{ marginTop: 12, gap: 8 }}>
-              {materials.map(m => (
-                <View key={m.id} style={styles.materialRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B' }}>{m.name}</Text>
-                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity} × ${m.unit_cost} = ${m.total_cost}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => handleRemoveMaterial(m.id)}>
-                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-              <View style={styles.addMaterialRow}>
-                <TextInput style={[styles.materialInput, { flex: 2 }]} placeholder="Material name" value={newMaterial.name} onChangeText={v => setNewMaterial(p => ({...p, name: v}))} />
-                <TextInput style={[styles.materialInput, { flex: 0.6 }]} placeholder="Qty" value={newMaterial.qty} onChangeText={v => setNewMaterial(p => ({...p, qty: v}))} keyboardType="numeric" />
-                <TextInput style={[styles.materialInput, { flex: 0.8 }]} placeholder="$Cost" value={newMaterial.cost} onChangeText={v => setNewMaterial(p => ({...p, cost: v}))} keyboardType="decimal-pad" />
-                <TouchableOpacity style={styles.addMaterialBtn} onPress={handleAddMaterial}>
-                  <Ionicons name="add" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-
         {/* Quick Actions */}
         {job.status !== 'completed' && job.status !== 'cancelled' && (
           <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 12 }}>
-            {job.customer_phone ? (
-              <TouchableOpacity onPress={handleCall}
-                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                <Ionicons name="call-outline" size={16} color="#10B981" />
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#10B981' }}>Call</Text>
-              </TouchableOpacity>
-            ) : null}
             {job.customer_email && (job.status === 'travelling' || job.status === 'on_site' || job.status === 'in_progress') ? (
               <TouchableOpacity onPress={handleSendETA}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>

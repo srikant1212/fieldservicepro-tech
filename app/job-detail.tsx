@@ -49,6 +49,8 @@ export default function JobDetail() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [reportBusy, setReportBusy] = useState<'view' | 'send' | null>(null);
   const [signerName, setSignerName] = useState('');
   const [closingAnswers, setClosingAnswers] = useState<ClosingAnswers>(EMPTY_CLOSING_ANSWERS);
   const [materials, setMaterials] = useState<any[]>([]);
@@ -137,6 +139,9 @@ export default function JobDetail() {
   };
 
   const handleComplete = async () => {
+    // A second tap while the first is still saving would complete the job (and email the customer) twice
+    if (completing) return;
+    setCompleting(true);
     const completedAt = new Date().toISOString();
     const closingNotes = formatClosingNotes(closingAnswers) || null;
     const { error } = await updateJob(id as string,
@@ -151,6 +156,7 @@ export default function JobDetail() {
     if (error) {
       haptic.error();
       Alert.alert('Error', 'Failed to complete job. Please try again.');
+      setCompleting(false);
       return;
     }
     haptic.success();
@@ -385,14 +391,61 @@ export default function JobDetail() {
     </Modal>
   ) : null;
 
-  const handleSendReport = async () => {
+  // Opens the saved report PDF. If none was saved at completion (e.g. the app was closed), build and save it now.
+  const handleViewReport = async () => {
+    if (reportBusy) return;
+    setReportBusy('view');
     try {
-      const { error } = await supabase.functions.invoke('send-job-report', {
-        body: { job_id: job.id, customer_email: job.customer_email, customer_name: job.customer_name, job_number: job.job_number }
-      });
-      if (error) throw error;
-      Alert.alert('Report Sent', `Job report sent to ${job.customer_email}`);
-    } catch (e: any) { Alert.alert('Error', e.message); }
+      let url: string | null = job.report_url || null;
+      if (!url) {
+        const { base64 } = await createJobReportPdf(job, user, { base64: true });
+        const { data, error } = await supabase.functions.invoke('send-job-report', {
+          body: { job_id: job.id, customer_email: job.customer_email, customer_name: job.customer_name, job_number: job.job_number, save_only: true, pdf_base64: base64 }
+        });
+        if (error) throw error;
+        url = data?.report_url || null;
+        if (url) {
+          supabase.from('jobs').update({ report_url: url } as any).eq('id', job.id).then(() => {});
+          setJob((prev: any) => ({ ...prev, report_url: url }));
+        }
+      }
+      if (!url) throw new Error('The report could not be prepared. Please try again.');
+      await Linking.openURL(url);
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Could not open the report');
+    } finally {
+      setReportBusy(null);
+    }
+  };
+
+  const handleSendReport = () => {
+    if (reportBusy) return;
+    if (!job?.customer_email) { Alert.alert('No email', 'No customer email on this job'); return; }
+    Alert.alert('Send Report', `Email the job report to ${job.customer_email}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Send', onPress: async () => {
+        setReportBusy('send');
+        try {
+          // Generate the PDF here and send it with the request: the server stores it and links it in the email
+          const { base64 } = await createJobReportPdf(job, user, { base64: true });
+          const { data, error } = await supabase.functions.invoke('send-job-report', {
+            body: { job_id: job.id, customer_email: job.customer_email, customer_name: job.customer_name, job_number: job.job_number, pdf_base64: base64 }
+          });
+          if (error) throw error;
+          const sentAt = new Date().toISOString();
+          await supabase.from('jobs').update({ report_sent_at: sentAt, ...(data?.report_url ? { report_url: data.report_url } : {}) } as any).eq('id', job.id);
+          setJob((prev: any) => ({ ...prev, report_sent_at: sentAt, ...(data?.report_url ? { report_url: data.report_url } : {}) }));
+          const entry = { job_id: job.id, user_id: user?.id, action: 'report_sent', details: `Job report sent to ${job.customer_email}` };
+          const { error: logError } = await supabase.from('job_activity_log').insert(entry);
+          if (!logError) setActivity(prev => [{ ...entry, created_at: sentAt }, ...prev]);
+          toast.success('Report sent', `Sent to ${job.customer_email}`);
+        } catch (e: any) {
+          Alert.alert('Error', e.message || 'Failed to send the report');
+        } finally {
+          setReportBusy(null);
+        }
+      }},
+    ]);
   };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
@@ -618,7 +671,7 @@ export default function JobDetail() {
           )}
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 170 }} />
       </ScrollView>
 
       {photoModal}
@@ -650,9 +703,25 @@ export default function JobDetail() {
           </TouchableOpacity>
         )}
         {job.status === 'completed' && (
-          <View style={styles.completedBar}>
-            <Ionicons name="checkmark-circle" size={24} color="#10B981"/>
-            <Text style={styles.completedText}>Job Completed</Text>
+          <View style={{ gap: 10 }}>
+            <View style={styles.completedBar}>
+              <Ionicons name="checkmark-circle" size={24} color="#10B981"/>
+              <Text style={styles.completedText}>Job Completed</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity onPress={handleViewReport} disabled={!!reportBusy}
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 13, borderRadius: 12, borderWidth: 1, borderColor: '#0066FF', opacity: reportBusy ? 0.6 : 1 }}>
+                {reportBusy === 'view' ? <ActivityIndicator color="#0066FF" size="small" /> : <Ionicons name="document-text-outline" size={18} color="#0066FF" />}
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#0066FF' }}>View Report</Text>
+              </TouchableOpacity>
+              {!!job.customer_email && (
+                <TouchableOpacity onPress={handleSendReport} disabled={!!reportBusy}
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 13, borderRadius: 12, backgroundColor: '#0066FF', opacity: reportBusy ? 0.6 : 1 }}>
+                  {reportBusy === 'send' ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="mail-outline" size={18} color="#fff" />}
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{job.report_sent_at ? 'Resend Report' : 'Send Report'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
       </View>
@@ -692,8 +761,8 @@ export default function JobDetail() {
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowCompleteModal(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleComplete}>
-                <Text style={styles.modalConfirmText}>Complete Job</Text>
+              <TouchableOpacity style={[styles.modalConfirmBtn, completing && { opacity: 0.6 }]} onPress={handleComplete} disabled={completing}>
+                {completing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Complete Job</Text>}
               </TouchableOpacity>
             </View>
           </View>

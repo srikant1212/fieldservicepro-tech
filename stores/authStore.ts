@@ -108,6 +108,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Clear this device's push token first (needs the session), so a signed-out phone stops getting notifications.
+    // Never let a failure here block signing out.
+    const userId = get().user?.id;
+    if (userId) {
+      try {
+        const { unregisterPushNotifications } = await import('../lib/notifications');
+        await unregisterPushNotifications(userId);
+      } catch {}
+    }
     await supabase.auth.signOut();
     set({ session: null, user: null });
   },

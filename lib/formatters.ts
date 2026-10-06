@@ -33,3 +33,11 @@ export function getDaysUntil(dateStr: string): number {
   if (!dateStr) return 0;
   return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / 86400000);
 }
+
+// YYYY-MM-DD in the device's local timezone (toISOString() would give the UTC date)
+export function toLocalDateStr(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}

@@ -53,9 +53,18 @@ export default function Availability() {
         start_time: day.start_time,
         end_time: day.end_time,
       }));
-      await supabase.from('technician_availability').delete().eq('user_id', user.id);
-      const { error } = await supabase.from('technician_availability').insert(records as any);
-      if (error) throw error;
+      // Never delete before the new rows are safely written, so a failed save can't wipe availability
+      const { data: existing, error: fetchError } = await supabase.from('technician_availability').select('id').eq('user_id', user.id);
+      if (fetchError) throw fetchError;
+      const { error: upsertError } = await supabase.from('technician_availability').upsert(records as any, { onConflict: 'user_id,day_of_week' });
+      if (upsertError) {
+        // 42P10 = no unique constraint on (user_id, day_of_week): insert the new rows, then remove the old ones
+        if (upsertError.code !== '42P10') throw upsertError;
+        const { error } = await supabase.from('technician_availability').insert(records as any);
+        if (error) throw error;
+        const oldIds = (existing || []).map(r => r.id);
+        if (oldIds.length) await supabase.from('technician_availability').delete().in('id', oldIds);
+      }
       Alert.alert('✅ Saved', 'Your availability has been updated');
     } catch (e: any) {
       Alert.alert('Error', e.message);

@@ -22,6 +22,19 @@ function AuthGuard() {
     }
   }, [user?.id]);
 
+  // Open the job when a push notification is tapped (only once signed in and past the login screens)
+  const canOpenJobs = !!user?.id && !loading && segments[0] !== '(auth)';
+  useEffect(() => {
+    if (!canOpenJobs) return;
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
+    import('../lib/notifications').then(({ handleNotificationTaps }) => {
+      if (cancelled) return;
+      cleanup = handleNotificationTaps(jobId => router.push({ pathname: '/job-detail', params: { id: jobId } } as any));
+    }).catch(() => {});
+    return () => { cancelled = true; cleanup?.(); };
+  }, [canOpenJobs]);
+
   useEffect(() => {
     if (loading) return;
     const inAuth = segments[0] === '(auth)';

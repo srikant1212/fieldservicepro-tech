@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { getOrgId } from '../../lib/getOrgId';
 import { startJob, notifyOnTheWay } from '../../lib/jobActions';
 import { useAuthStore } from '../../stores/authStore';
-import { formatDate } from '../../lib/formatters';
+import { formatDate, toLocalDateStr } from '../../lib/formatters';
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: '#3B82F6', in_progress: '#F59E0B', completed: '#10B981', cancelled: '#EF4444',
@@ -35,8 +35,9 @@ export default function Dashboard() {
     finally { setLoading(false); setRefreshing(false); }
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateStr();
   const todayJobs = jobs.filter(j => j.date === today && j.status !== 'cancelled' && j.status !== 'completed');
+  const overdueJobs = jobs.filter(j => j.date && j.date < today && j.status !== 'cancelled' && j.status !== 'completed');
   const upcomingJobs = jobs.filter(j => j.date > today && j.status !== 'completed' && j.status !== 'cancelled');
   const completedJobs = jobs.filter(j => j.status === 'completed');
   const activeJob = jobs.find(j => j.status === 'in_progress');
@@ -58,6 +59,49 @@ export default function Dashboard() {
     if (error) Alert.alert('Error', 'Failed to start job. Please try again.');
     fetchData();
   };
+
+  const renderJobCard = (job: any, overdue = false) => (
+    <TouchableOpacity key={job.id} style={styles.jobCard} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
+      <View style={[styles.statusBar, { backgroundColor: STATUS_COLORS[job.status] || '#94A3B8' }]} />
+      <View style={styles.jobBody}>
+        <View style={styles.jobRow}>
+          <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[job.status] || '#94A3B8') + '20' }]}>
+            <Text style={[styles.statusText, { color: STATUS_COLORS[job.status] || '#94A3B8' }]}>{job.status?.replace('_', ' ')}</Text>
+          </View>
+        </View>
+        <Text style={styles.jobCustomer}>{job.customer_name}</Text>
+        {job.address ? <View style={styles.jobMeta}><Ionicons name="location-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText} numberOfLines={1}>{job.address}</Text></View> : null}
+        {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
+        {overdue && job.date ? <View style={styles.jobMeta}><Ionicons name="alert-circle-outline" size={12} color="#EF4444" /><Text style={[styles.jobMetaText, { color: '#EF4444', fontWeight: '600' }]}>Was due {new Date(job.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</Text></View> : null}
+        
+        {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStartTravel(job)}>
+            <Ionicons name="car-outline" size={14} color="#fff" />
+            <Text style={styles.startBtnText}>Start Travel</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'travelling' && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#EF4444' }]} onPress={() => handleStatusUpdate(job.id, 'on_site')}>
+            <Ionicons name="location-outline" size={14} color="#fff" />
+            <Text style={styles.startBtnText}>Arrived On Site</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'on_site' && (
+          <TouchableOpacity style={styles.startBtn} onPress={() => handleStartJob(job.id)}>
+            <Ionicons name="construct-outline" size={14} color="#fff" />
+            <Text style={styles.startBtnText}>Start Job</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'in_progress' && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#10B981' }]} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
+            <Ionicons name="arrow-forward" size={14} color="#fff" />
+            <Text style={styles.startBtnText}>Continue Job</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
 
@@ -113,6 +157,14 @@ export default function Dashboard() {
           </TouchableOpacity>
         )}
 
+        {/* Overdue — past-dated jobs that were never completed */}
+        {overdueJobs.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Overdue ({overdueJobs.length})</Text>
+            {overdueJobs.map(job => renderJobCard(job, true))}
+          </View>
+        )}
+
         {/* Today's jobs */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Today — {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
@@ -121,47 +173,7 @@ export default function Dashboard() {
               <Ionicons name="checkmark-circle-outline" size={32} color="#10B981" />
               <Text style={styles.emptyText}>No jobs today — enjoy your day!</Text>
             </View>
-          ) : todayJobs.map(job => (
-            <TouchableOpacity key={job.id} style={styles.jobCard} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
-              <View style={[styles.statusBar, { backgroundColor: STATUS_COLORS[job.status] || '#94A3B8' }]} />
-              <View style={styles.jobBody}>
-                <View style={styles.jobRow}>
-                  <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[job.status] || '#94A3B8') + '20' }]}>
-                    <Text style={[styles.statusText, { color: STATUS_COLORS[job.status] || '#94A3B8' }]}>{job.status?.replace('_', ' ')}</Text>
-                  </View>
-                </View>
-                <Text style={styles.jobCustomer}>{job.customer_name}</Text>
-                {job.address ? <View style={styles.jobMeta}><Ionicons name="location-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText} numberOfLines={1}>{job.address}</Text></View> : null}
-                {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
-                
-                {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
-                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStartTravel(job)}>
-                    <Ionicons name="car-outline" size={14} color="#fff" />
-                    <Text style={styles.startBtnText}>Start Travel</Text>
-                  </TouchableOpacity>
-                )}
-                {job.status === 'travelling' && (
-                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#EF4444' }]} onPress={() => handleStatusUpdate(job.id, 'on_site')}>
-                    <Ionicons name="location-outline" size={14} color="#fff" />
-                    <Text style={styles.startBtnText}>Arrived On Site</Text>
-                  </TouchableOpacity>
-                )}
-                {job.status === 'on_site' && (
-                  <TouchableOpacity style={styles.startBtn} onPress={() => handleStartJob(job.id)}>
-                    <Ionicons name="construct-outline" size={14} color="#fff" />
-                    <Text style={styles.startBtnText}>Start Job</Text>
-                  </TouchableOpacity>
-                )}
-                {job.status === 'in_progress' && (
-                  <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#10B981' }]} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
-                    <Ionicons name="arrow-forward" size={14} color="#fff" />
-                    <Text style={styles.startBtnText}>Continue Job</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+          ) : todayJobs.map(job => renderJobCard(job))}
         </View>
 
         {/* Upcoming */}

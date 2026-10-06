@@ -114,11 +114,11 @@ export default function Profile() {
             <Ionicons name="business-outline" size={18} color="#64748B" />
             <Text style={styles.infoText}>{org?.name}</Text>
           </View>
-          {org?.phone && <View style={styles.infoRow}>
+          {!!org?.phone && <View style={styles.infoRow}>
             <Ionicons name="call-outline" size={18} color="#64748B" />
             <Text style={styles.infoText}>{org.phone}</Text>
           </View>}
-          {org?.email && <View style={styles.infoRow}>
+          {!!org?.email && <View style={styles.infoRow}>
             <Ionicons name="mail-outline" size={18} color="#64748B" />
             <Text style={styles.infoText}>{org.email}</Text>
           </View>}

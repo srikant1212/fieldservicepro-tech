@@ -52,7 +52,7 @@ export default function Earnings() {
               <Text style={styles.meta}>{item.jobs?.customer_name}</Text>
               {item.jobs?.date && <Text style={styles.meta}>{new Date(item.jobs.date).toLocaleDateString('en-AU')}</Text>}
               <Text style={styles.meta}>Paid: {new Date(item.paid_at).toLocaleDateString('en-AU')}</Text>
-              {item.notes && <Text style={[styles.meta, { color: COLORS.primary }]}>{item.notes}</Text>}
+              {!!item.notes && <Text style={[styles.meta, { color: COLORS.primary }]}>{item.notes}</Text>}
               <View style={{ marginTop: 6, backgroundColor: '#ECFDF5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20, alignSelf: 'flex-start' }}>
                 <Text style={{ fontSize: 10, fontWeight: '700', color: COLORS.success }}>✅ PAID</Text>
               </View>

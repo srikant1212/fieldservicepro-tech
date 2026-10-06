@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { toLocalDateStr } from '../../lib/formatters';
 
 export default function Schedule() {
   const { user } = useAuthStore();
@@ -31,8 +32,8 @@ export default function Schedule() {
     return days;
   };
 
-  const today = new Date().toISOString().split('T')[0];
-  const selectedStr = selectedDate.toISOString().split('T')[0];
+  const today = toLocalDateStr();
+  const selectedStr = toLocalDateStr(selectedDate);
   const selectedJobs = jobs.filter(j => j.date === selectedStr);
   const jobDates = new Set(jobs.map(j => j.date));
 
@@ -54,7 +55,7 @@ export default function Schedule() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8, alignItems: 'center' }}>
         {getDaysInMonth().map(day => {
-          const dayStr = day.toISOString().split('T')[0];
+          const dayStr = toLocalDateStr(day);
           const isToday = dayStr === today;
           const isSelected = dayStr === selectedStr;
           const hasJobs = jobDates.has(dayStr);
@@ -80,7 +81,7 @@ export default function Schedule() {
               {job.time_start && <Text style={styles.jobTime}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text>}
               <Text style={styles.jobTitle}>{job.title}</Text>
               <Text style={styles.jobCustomer}>{job.customer_name}</Text>
-              {job.address && <View style={{ flexDirection:'row', gap:4, alignItems:'center' }}><Ionicons name="location-outline" size={12} color="#94A3B8"/><Text style={styles.jobAddress} numberOfLines={1}>{job.address}</Text></View>}
+              {!!job.address && <View style={{ flexDirection:'row', gap:4, alignItems:'center' }}><Ionicons name="location-outline" size={12} color="#94A3B8"/><Text style={styles.jobAddress} numberOfLines={1}>{job.address}</Text></View>}
             </View>
             <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[job.status] || '#94A3B8' }]} />
           </TouchableOpacity>

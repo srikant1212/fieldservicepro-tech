@@ -51,3 +51,23 @@ export function setupNotificationListeners(onReceive?: (n: any) => void, onRespo
   const sub2 = Notifications.addNotificationResponseReceivedListener(r => onResponse?.(r));
   return () => { sub1.remove(); sub2.remove(); };
 }
+
+// Open the job when a push notification is tapped, whether the app was running or launched by the tap.
+// The backend sends `data: { job_id, type }` with job notifications.
+export function handleNotificationTaps(onOpenJob: (jobId: string) => void) {
+  let lastHandledId: string | null = null;
+  const open = (response: Notifications.NotificationResponse | null) => {
+    const request = response?.notification?.request;
+    const jobId = request?.content?.data?.job_id;
+    if (!request || typeof jobId !== 'string' || request.identifier === lastHandledId) return;
+    lastHandledId = request.identifier;
+    onOpenJob(jobId);
+  };
+  // Tap that launched the app from a closed state
+  const launchResponse = Notifications.getLastNotificationResponse();
+  if (launchResponse) {
+    open(launchResponse);
+    Notifications.clearLastNotificationResponse();
+  }
+  return setupNotificationListeners(undefined, open);
+}

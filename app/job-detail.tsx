@@ -356,16 +356,16 @@ export default function JobDetail() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Customer</Text>
           <Text style={styles.customerName}>{job.customer_name}</Text>
-          {job.address && <View style={styles.infoRow}><Ionicons name="location-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{job.address}</Text></View>}
-          {job.date && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{new Date(job.date).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' })}{job.time_start ? ` · ${job.time_start.slice(0,5)}` : ''}</Text></View>}
+          {!!job.address && <View style={styles.infoRow}><Ionicons name="location-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{job.address}</Text></View>}
+          {!!job.date && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{new Date(job.date).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' })}{job.time_start ? ` · ${job.time_start.slice(0,5)}` : ''}</Text></View>}
           {job.estimate > 0 && user?.can_view_financials && <View style={styles.infoRow}><Ionicons name="cash-outline" size={16} color="#64748B"/><Text style={styles.infoText}>Estimate: ${job.estimate}</Text></View>}
           
           <View style={styles.actionBtns}>
-            {job.customer_phone && <TouchableOpacity style={styles.actionBtn} onPress={handleCall}>
+            {!!job.customer_phone && <TouchableOpacity style={styles.actionBtn} onPress={handleCall}>
               <Ionicons name="call-outline" size={18} color="#10B981"/>
               <Text style={[styles.actionBtnText, { color:'#10B981' }]}>Call</Text>
             </TouchableOpacity>}
-            {job.address && <TouchableOpacity style={[styles.actionBtn, { borderColor:'#0066FF' }]} onPress={handleNavigate}>
+            {!!job.address && <TouchableOpacity style={[styles.actionBtn, { borderColor:'#0066FF' }]} onPress={handleNavigate}>
               <Ionicons name="navigate-outline" size={18} color="#0066FF"/>
               <Text style={[styles.actionBtnText, { color:'#0066FF' }]}>Navigate</Text>
             </TouchableOpacity>}
@@ -373,7 +373,7 @@ export default function JobDetail() {
         </View>
 
         {/* Job Description */}
-        {job.description && (
+        {!!job.description && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Description</Text>
             <Text style={styles.descText}>{job.description}</Text>

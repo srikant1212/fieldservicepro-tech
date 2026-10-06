@@ -8,6 +8,7 @@ import { startJob, notifyOnTheWay, updateJob } from '../lib/jobActions';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
+import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
 import { formatCurrency } from '../lib/formatters';
 
 const STATUS_COLORS: Record<string,string> = { 
@@ -48,7 +49,7 @@ export default function JobDetail() {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [signerName, setSignerName] = useState('');
-  const [closingNotes, setClosingNotes] = useState('');
+  const [closingAnswers, setClosingAnswers] = useState<ClosingAnswers>(EMPTY_CLOSING_ANSWERS);
   const [materials, setMaterials] = useState<any[]>([]);
   const [newMaterial, setNewMaterial] = useState({ name: '', qty: '1', cost: '' });
   const [showMaterials, setShowMaterials] = useState(false);
@@ -71,7 +72,7 @@ export default function JobDetail() {
         const { data: people } = await supabase.from('profiles').select('id, display_name').in('id', otherIds as string[]);
         setActorNames(Object.fromEntries((people || []).filter(p => p.display_name).map(p => [p.id, p.display_name])));
       }
-      setClosingNotes(data.closing_notes || '');
+      setClosingAnswers(parseClosingNotes(data.closing_notes));
       // Load photos
       const { data: files } = await supabase.storage.from('job-photos').list(`${id}/`);
       if (files?.length) {
@@ -131,7 +132,7 @@ export default function JobDetail() {
   const handleComplete = async () => {
     const completedAt = new Date().toISOString();
     const { error } = await updateJob(id as string,
-      { status: 'completed', closing_notes: closingNotes },
+      { status: 'completed', closing_notes: formatClosingNotes(closingAnswers) || null },
       { completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null });
     if (error) {
       haptic.error();
@@ -616,18 +617,22 @@ export default function JobDetail() {
           <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} activeOpacity={1} onPress={() => setShowCompleteModal(false)} />
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             <Text style={styles.modalTitle}>Complete Job</Text>
-            <Text style={styles.modalSub}>Add closing notes and the customer's name before finishing</Text>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 12 }}>CLOSING NOTES (OPTIONAL)</Text>
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 140 }}>
-              <TextInput
-                style={{ borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 14, color: '#1E293B', minHeight: 100, textAlignVertical: 'top' }}
-                placeholder="Describe work performed, parts used, follow-up needed..."
-                placeholderTextColor="#CBD5E1"
-                value={closingNotes}
-                onChangeText={setClosingNotes}
-                multiline
-                scrollEnabled={false}
-              />
+            <Text style={styles.modalSub}>Answer what you can below, then add the customer's name</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 320, marginTop: 12 }} showsVerticalScrollIndicator={false}>
+              {CLOSING_QUESTIONS.map(q => (
+                <View key={q.key} style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 6 }}>{q.question}</Text>
+                  <TextInput
+                    style={{ borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 14, color: '#1E293B', minHeight: 68, textAlignVertical: 'top' }}
+                    placeholder={q.placeholder}
+                    placeholderTextColor="#CBD5E1"
+                    value={closingAnswers[q.key]}
+                    onChangeText={v => setClosingAnswers(prev => ({ ...prev, [q.key]: v }))}
+                    multiline
+                    scrollEnabled={false}
+                  />
+                </View>
+              ))}
             </ScrollView>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 16 }}>CUSTOMER NAME (OPTIONAL)</Text>
             <TextInput

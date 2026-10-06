@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Linking } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -128,15 +128,17 @@ export default function Profile() {
 
         {/* Quick Links */}
         <View style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0' }}>
-          {[
+          {([
             { label: 'Edit Profile', icon: 'person-outline', route: '/edit-profile' },
             { label: 'Notification Settings', icon: 'notifications-outline', route: '/notification-settings' },
             { label: 'Job History', icon: 'time-outline', route: '/job-history' },
             { label: 'My Availability', icon: 'calendar-outline', route: '/availability' },
             { label: 'Navigate to Job', icon: 'map-outline', route: '/map' },
-          ].map((item, i, links) => (
+            { label: 'Privacy Policy', icon: 'shield-checkmark-outline', url: 'https://fieldservicepro.work/privacy' },
+            { label: 'Terms of Service', icon: 'document-text-outline', url: 'https://fieldservicepro.work/terms' },
+          ] as { label: string; icon: string; route?: string; url?: string }[]).map((item, i, links) => (
             <TouchableOpacity key={item.label} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: i < links.length - 1 ? 1 : 0, borderBottomColor: '#E2E8F0' }}
-              onPress={() => router.push(item.route as any)}>
+              onPress={() => item.url ? Linking.openURL(item.url).catch(() => Alert.alert('Error', 'Could not open link')) : router.push(item.route as any)}>
               <Ionicons name={item.icon as any} size={20} color="#0066FF" style={{ marginRight: 12 }} />
               <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#1E293B' }}>{item.label}</Text>
               <Ionicons name="chevron-forward" size={16} color="#94A3B8" />

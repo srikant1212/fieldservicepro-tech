@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { toast } from '../lib/toast';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981', warning: '#F59E0B', danger: '#EF4444' };
 const STATUS_COLORS: Record<string,string> = { scheduled: COLORS.primary, in_progress: COLORS.warning, completed: COLORS.success, cancelled: COLORS.danger };
@@ -19,11 +20,12 @@ export default function JobHistory() {
 
   const fetchJobs = async () => {
     setLoading(true);
-    const { data } = await supabase.from('jobs')
+    const { data, error } = await supabase.from('jobs')
       .select('id,job_number,title,status,date,customer_name,address,estimate,closing_notes')
       .eq('assigned_to', user?.id || '')
       .in('status', ['completed', 'cancelled'])
       .order('date', { ascending: false });
+    if (error) toast.error('Could not load job history');
     setJobs(data || []);
     setLoading(false);
   };

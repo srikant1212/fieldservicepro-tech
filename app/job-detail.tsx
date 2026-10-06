@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput,
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
 import { startJob, notifyOnTheWay, updateJob } from '../lib/jobActions';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
+import { formatCurrency } from '../lib/formatters';
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', travelling:'#F59E0B', 
@@ -21,6 +21,14 @@ const STATUS_LABELS: Record<string,string> = {
   cancelled:'Cancelled', pending:'Pending' 
 };
 
+const ACTIVITY_STYLES: Record<string, { icon: string; color: string; bg: string }> = {
+  note_added: { icon: 'document-text-outline', color: '#0066FF', bg: '#EFF6FF' },
+  photo_added: { icon: 'camera-outline', color: '#10B981', bg: '#F0FDF4' },
+  started: { icon: 'play-circle-outline', color: '#0066FF', bg: '#EFF6FF' },
+  completed: { icon: 'checkmark-circle-outline', color: '#10B981', bg: '#F0FDF4' },
+};
+const DEFAULT_ACTIVITY_STYLE = { icon: 'time-outline', color: '#F59E0B', bg: '#FEF3C7' };
+
 export default function JobDetail() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -29,6 +37,7 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState('');
   const [activity, setActivity] = useState<any[]>([]);
+  const [actorNames, setActorNames] = useState<Record<string,string>>({});
   const [newNote, setNewNote] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -47,7 +56,7 @@ export default function JobDetail() {
   useFocusEffect(useCallback(() => { fetchJob(); }, [id]));
 
   const fetchJob = async () => {
-    if (!id) return;
+    if (!id) { setLoading(false); return; }
     const { data } = await supabase.from('jobs').select('*').eq('id', id as string).single();
     if (data) {
       setJob(data);
@@ -56,6 +65,12 @@ export default function JobDetail() {
       const { data: actData } = await supabase.from('job_activity_log')
         .select('*').eq('job_id', id as string).order('created_at', { ascending: false }).limit(20);
       setActivity(actData || []);
+      // Names for other people's activity entries
+      const otherIds = [...new Set((actData || []).map(a => a.user_id).filter((u: any) => u && u !== user?.id))];
+      if (otherIds.length) {
+        const { data: people } = await supabase.from('profiles').select('id, display_name').in('id', otherIds as string[]);
+        setActorNames(Object.fromEntries((people || []).filter(p => p.display_name).map(p => [p.id, p.display_name])));
+      }
       setClosingNotes(data.closing_notes || '');
       // Load photos
       const { data: files } = await supabase.storage.from('job-photos').list(`${id}/`);
@@ -88,16 +103,18 @@ export default function JobDetail() {
 
   const handleStart = async () => {
     haptic.medium();
-    await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
-    setJob({ ...job, status: 'travelling' });
+    const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
+    if (error) { Alert.alert('Error', 'Failed to start travel. Please try again.'); return; }
+    setJob((prev: any) => ({ ...prev, status: 'travelling' }));
     // Notify customer team member is on the way
     notifyOnTheWay(job, user);
   };
 
   const handleOnSite = async () => {
     haptic.medium();
-    await supabase.from('jobs').update({ status: 'on_site' } as any).eq('id', id as string);
-    setJob({ ...job, status: 'on_site' });
+    const { error } = await supabase.from('jobs').update({ status: 'on_site' } as any).eq('id', id as string);
+    if (error) { Alert.alert('Error', 'Failed to update status. Please try again.'); return; }
+    setJob((prev: any) => ({ ...prev, status: 'on_site' }));
   };
 
   const handleStartWork = async () => {
@@ -264,11 +281,13 @@ export default function JobDetail() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Revert', style: 'destructive', onPress: async () => {
-          await supabase.from('jobs').update({ status: prevStatus } as any).eq('id', id as string);
-          setJob((prev: any) => ({ ...prev, status: prevStatus }));
-          await supabase.from('job_activity_log').insert({
-            job_id: id, user_id: user?.id, action: prevStatus, details: `Status reverted to ${prevStatus}`
-          });
+          // Leaving In Progress clears the start time so the timer restarts from zero next time
+          const { error } = await updateJob(id as string, { status: prevStatus }, job?.status === 'in_progress' ? { started_at: null } : {});
+          if (error) { Alert.alert('Error', 'Failed to revert status. Please try again.'); return; }
+          setJob((prev: any) => ({ ...prev, status: prevStatus, ...(prev.status === 'in_progress' ? { started_at: null } : {}) }));
+          const entry = { job_id: id, user_id: user?.id, action: prevStatus, details: `Status reverted to ${prevStatus.replace('_', ' ')}` };
+          const { error: logError } = await supabase.from('job_activity_log').insert(entry);
+          if (!logError) setActivity(prev => [{ ...entry, created_at: new Date().toISOString() }, ...prev]);
         }}
       ]
     );
@@ -296,9 +315,15 @@ export default function JobDetail() {
     setNewMaterial({ name: '', qty: '1', cost: '' });
   };
 
-  const handleRemoveMaterial = async (matId: string) => {
-    await supabase.from('job_materials').delete().eq('id', matId);
-    setMaterials(m => m.filter(x => x.id !== matId));
+  const handleRemoveMaterial = (mat: any) => {
+    Alert.alert('Remove Material', `Remove "${mat.name}" from this job?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+        const { error } = await supabase.from('job_materials').delete().eq('id', mat.id);
+        if (error) { Alert.alert('Error', 'Failed to remove material'); return; }
+        setMaterials(m => m.filter(x => x.id !== mat.id));
+      }}
+    ]);
   };
 
   const totalMaterialCost = materials.reduce((sum, m) => sum + (m.total_cost || 0), 0);
@@ -347,7 +372,7 @@ export default function JobDetail() {
       {/* Timer */}
       {job.status === 'in_progress' && (
         <View style={styles.timerBar}>
-          <Ionicons name="time-outline" size={18} color="#F59E0B" />
+          <Ionicons name="time-outline" size={18} color="#0066FF" />
           <Text style={styles.timerText}>{formatTimer(timerSeconds)}</Text>
           <Text style={styles.timerLabel}>Time on job</Text>
         </View>
@@ -421,7 +446,7 @@ export default function JobDetail() {
         </View>
 
         {/* Materials / Parts Used */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 14, margin: 16, padding: 16 }}>
+        <View style={styles.card}>
           <TouchableOpacity style={styles.sectionHeader} onPress={() => setShowMaterials(!showMaterials)}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Ionicons name="construct-outline" size={18} color="#0066FF" />
@@ -429,7 +454,7 @@ export default function JobDetail() {
               {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {totalMaterialCost > 0 && !!user?.can_view_financials && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
+              {totalMaterialCost > 0 && !!user?.can_view_financials && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>{formatCurrency(totalMaterialCost)}</Text>}
               <Ionicons name={showMaterials ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
             </View>
           </TouchableOpacity>
@@ -439,9 +464,9 @@ export default function JobDetail() {
                 <View key={m.id} style={styles.materialRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B' }}>{m.name}</Text>
-                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity}{user?.can_view_financials ? ` × $${m.unit_cost} = $${m.total_cost}` : ''}</Text>
+                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity}{user?.can_view_financials ? ` × ${formatCurrency(Number(m.unit_cost) || 0)} = ${formatCurrency(Number(m.total_cost) || 0)}` : ''}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => handleRemoveMaterial(m.id)}>
+                  <TouchableOpacity onPress={() => handleRemoveMaterial(m)}>
                     <Ionicons name="trash-outline" size={18} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
@@ -516,12 +541,12 @@ export default function JobDetail() {
           ) : (
             activity.map((a, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 8, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: '#F1F5F9' }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: a.action === 'note_added' ? '#EFF6FF' : a.action === 'photo_added' ? '#F0FDF4' : '#FEF3C7', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name={a.action === 'note_added' ? 'document-text-outline' : a.action === 'photo_added' ? 'camera-outline' : 'time-outline'} size={16} color={a.action === 'note_added' ? '#0066FF' : a.action === 'photo_added' ? '#10B981' : '#F59E0B'} />
+                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: (ACTIVITY_STYLES[a.action] || DEFAULT_ACTIVITY_STYLE).bg, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name={(ACTIVITY_STYLES[a.action] || DEFAULT_ACTIVITY_STYLE).icon as any} size={16} color={(ACTIVITY_STYLES[a.action] || DEFAULT_ACTIVITY_STYLE).color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 12, fontWeight: '700', color: '#475569', marginBottom: 2 }}>
-                    {a.user_id === user?.id ? 'You' : 'Team member'}
+                    {a.user_id === user?.id ? 'You' : actorNames[a.user_id] || 'Team member'}
                   </Text>
                   {a.action === 'photo_added' ? (() => {
                     let photoUrl = a.photo_url;
@@ -556,19 +581,19 @@ export default function JobDetail() {
         {(job.status === 'new' || job.status === 'scheduled' || job.status === 'pending') && (
           <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
             <Ionicons name="car-outline" size={20} color="#fff"/>
-            <Text style={styles.startBtnText}>🚗 Start Travel</Text>
+            <Text style={styles.startBtnText}>Start Travel</Text>
           </TouchableOpacity>
         )}
         {job.status === 'travelling' && (
           <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#EF4444' }]} onPress={handleOnSite}>
             <Ionicons name="location-outline" size={20} color="#fff"/>
-            <Text style={styles.startBtnText}>📍 Arrived On Site</Text>
+            <Text style={styles.startBtnText}>Arrived On Site</Text>
           </TouchableOpacity>
         )}
         {job.status === 'on_site' && (
           <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#0066FF' }]} onPress={handleStartWork}>
             <Ionicons name="construct-outline" size={20} color="#fff"/>
-            <Text style={styles.startBtnText}>🔧 Start Job</Text>
+            <Text style={styles.startBtnText}>Start Job</Text>
           </TouchableOpacity>
         )}
         {job.status === 'in_progress' && (
@@ -591,7 +616,7 @@ export default function JobDetail() {
           <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} activeOpacity={1} onPress={() => setShowCompleteModal(false)} />
           <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
             <Text style={styles.modalTitle}>Complete Job</Text>
-            <Text style={styles.modalSub}>Add closing notes and customer signature before finishing</Text>
+            <Text style={styles.modalSub}>Add closing notes and the customer's name before finishing</Text>
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569', marginBottom: 8, marginTop: 12 }}>CLOSING NOTES (OPTIONAL)</Text>
             <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 140 }}>
               <TextInput
@@ -636,9 +661,9 @@ const styles = StyleSheet.create({
   jobTitle: { fontSize: 17, fontWeight: '800', color: '#1E293B' },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   statusText: { fontSize: 12, fontWeight: '700' },
-  timerBar: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFBEB', padding: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#FDE68A' },
-  timerText: { fontSize: 22, fontWeight: '900', color: '#F59E0B', fontVariant: ['tabular-nums'] },
-  timerLabel: { fontSize: 12, color: '#92400E', flex: 1 },
+  timerBar: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#EFF6FF', padding: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#BFDBFE' },
+  timerText: { fontSize: 22, fontWeight: '900', color: '#0066FF', fontVariant: ['tabular-nums'] },
+  timerLabel: { fontSize: 12, color: '#1E40AF', flex: 1 },
   scroll: { flex: 1 },
   card: { backgroundColor: '#fff', borderRadius: 16, margin: 16, marginBottom: 8, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },

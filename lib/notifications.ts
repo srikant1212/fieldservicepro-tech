@@ -16,6 +16,10 @@ Notifications.setNotificationHandler({
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
   if (!Device.isDevice) return null;
 
+  // Respect the in-app switch (Notification Settings). Unset counts as on.
+  const { data: profile } = await supabase.from('profiles').select('push_notifications').eq('id', userId).single();
+  if (profile?.push_notifications === false) return null;
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -70,4 +74,9 @@ export function handleNotificationTaps(onOpenJob: (jobId: string) => void) {
     Notifications.clearLastNotificationResponse();
   }
   return setupNotificationListeners(undefined, open);
+}
+
+// Stop pushes to this device: the backend only sends when a push token is saved
+export async function unregisterPushNotifications(userId: string) {
+  return supabase.from('profiles').update({ push_token: null } as any).eq('id', userId);
 }

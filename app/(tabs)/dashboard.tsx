@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { getOrgId } from '../../lib/getOrgId';
 import { startJob, notifyOnTheWay } from '../../lib/jobActions';
+import { toast } from '../../lib/toast';
 import { useAuthStore } from '../../stores/authStore';
 import { formatDate, toLocalDateStr } from '../../lib/formatters';
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: '#3B82F6', in_progress: '#F59E0B', completed: '#10B981', cancelled: '#EF4444',
+  new: '#6B7280', pending: '#6B7280', travelling: '#8B5CF6', on_site: '#0EA5E9',
 };
 
 export default function Dashboard() {
@@ -29,9 +31,13 @@ export default function Dashboard() {
         supabase.from('jobs').select('*').eq('assigned_to', user.id).order('date', { ascending: true }),
         supabase.from('organizations').select('name, logo_url, brand_color').eq('id', await getOrgId(user) || '').single(),
       ]);
+      if (jobsRes.error) throw jobsRes.error;
       setJobs(jobsRes.data || []);
       setOrg(orgRes.data);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not load jobs', 'Pull down to try again');
+    }
     finally { setLoading(false); setRefreshing(false); }
   };
 
@@ -43,7 +49,8 @@ export default function Dashboard() {
   const activeJob = jobs.find(j => j.status === 'in_progress');
 
   const handleStatusUpdate = async (jobId: string, status: string) => {
-    await supabase.from('jobs').update({ status } as any).eq('id', jobId);
+    const { error } = await supabase.from('jobs').update({ status } as any).eq('id', jobId);
+    if (error) Alert.alert('Error', 'Failed to update job. Please try again.');
     fetchData();
   };
 
@@ -118,7 +125,7 @@ export default function Dashboard() {
             <Text style={styles.orgName}>{org?.name || 'Field Service Pro'}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.notifBtn}>
+        <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notification-settings' as any)}>
           <Ionicons name="notifications-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>

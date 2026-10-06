@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { getOrgId } from '../lib/getOrgId';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
 
@@ -28,7 +29,7 @@ export default function Availability() {
   useFocusEffect(useCallback(() => { fetchAvailability(); }, [user?.id]));
 
   const fetchAvailability = async () => {
-    if (!user?.id) return;
+    if (!user?.id) { setLoading(false); return; }
     const { data } = await supabase
       .from('technician_availability')
       .select('*')
@@ -45,11 +46,17 @@ export default function Availability() {
 
   const handleSave = async () => {
     if (!user?.id) return;
+    const badDay = availability.find(d => d.is_available && d.end_time <= d.start_time);
+    if (badDay) {
+      Alert.alert('Check your hours', `${badDay.day_name}: end time must be after start time.`);
+      return;
+    }
     setSaving(true);
     try {
+      const orgId = await getOrgId(user);
       const records = availability.map(day => ({
         user_id: user.id,
-        organization_id: user.organization_id,
+        organization_id: orgId,
         day_of_week: day.day_of_week,
         is_available: day.is_available,
         start_time: day.start_time,
@@ -100,7 +107,7 @@ export default function Availability() {
               <Switch
                 value={day.is_available}
                 onValueChange={v => setAvailability(prev => prev.map((d, i) => i === idx ? { ...d, is_available: v } : d))}
-                trackColor={{ true: '#0066FF' }}
+                trackColor={{ false: '#E2E8F0', true: '#0066FF' }}
               />
             </View>
             {day.is_available && (

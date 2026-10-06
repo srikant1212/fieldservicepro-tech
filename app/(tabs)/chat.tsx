@@ -17,23 +17,28 @@ export default function Chat() {
 
   useFocusEffect(useCallback(() => {
     fetchMessages();
-    const sub = supabase.channel('chat')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tech_messages', filter: `organization_id=eq.${user?.organization_id || ''}` },
-        payload => {
-          // Same visibility rule as fetchMessages: only my own messages, messages to me, or broadcasts
-          const msg: any = payload.new;
-          const isMine = msg.sender_id === user?.id || msg.recipient_id === user?.id || msg.recipient_id == null;
-          if (!isMine) return;
-          setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
-          setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(sub); };
+    let sub: ReturnType<typeof supabase.channel> | undefined;
+    let active = true;
+    getOrgId(user).then(orgId => {
+      if (!active || !orgId) return;
+      sub = supabase.channel(`chat-${user?.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tech_messages', filter: `organization_id=eq.${orgId}` },
+          payload => {
+            // Same visibility rule as fetchMessages: only my own messages, messages to me, or broadcasts
+            const msg: any = payload.new;
+            const isMine = msg.sender_id === user?.id || msg.recipient_id === user?.id || msg.recipient_id == null;
+            if (!isMine) return;
+            setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+            setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
+          })
+        .subscribe();
+    });
+    return () => { active = false; if (sub) supabase.removeChannel(sub); };
   }, [user?.id]));
 
   const fetchMessages = async () => {
     const orgId = await getOrgId(user);
-    if (!orgId) return;
+    if (!orgId) { setLoading(false); return; }
     const { data } = await supabase.from('tech_messages').select('*')
       .eq('organization_id', orgId)
       .or(`sender_id.eq.${user?.id},recipient_id.eq.${user?.id},recipient_id.is.null`)

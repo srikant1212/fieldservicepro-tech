@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { registerForPushNotifications, unregisterPushNotifications } from '../lib/notifications';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981' };
 
@@ -21,7 +22,7 @@ export default function NotificationSettings() {
       .select('push_notifications')
       .eq('id', user?.id)
       .single();
-    if (data) setPushEnabled(!!data.push_notifications);
+    if (data) setPushEnabled(data.push_notifications !== false);
     setLoading(false);
   };
 
@@ -30,11 +31,20 @@ export default function NotificationSettings() {
     setPushEnabled(val);
     setSaving(true);
     const { error } = await supabase.from('profiles').update({ push_notifications: val }).eq('id', user.id);
-    setSaving(false);
     if (error) {
+      setSaving(false);
       setPushEnabled(!val);
       Alert.alert('Error', 'Failed to save notification settings. Please try again.');
+      return;
     }
+    // Make the switch real: register this device when on, remove its push token when off
+    if (val) {
+      const token = await registerForPushNotifications(user.id).catch(() => null);
+      if (!token) Alert.alert('Notifications are blocked', 'Allow notifications for this app in your phone settings to receive alerts.');
+    } else {
+      await unregisterPushNotifications(user.id);
+    }
+    setSaving(false);
   };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color={COLORS.primary} /></View>;

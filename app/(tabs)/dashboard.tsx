@@ -7,6 +7,7 @@ import { getOrgId } from '../../lib/getOrgId';
 import { startJob, notifyOnTheWay } from '../../lib/jobActions';
 import { toast } from '../../lib/toast';
 import { useAuthStore } from '../../stores/authStore';
+import { LoadError } from '../../components/LoadError';
 import { formatDate, toLocalDateStr } from '../../lib/formatters';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [org, setOrg] = useState<any>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useFocusEffect(useCallback(() => { fetchData(); }, [user?.id]));
 
@@ -34,9 +36,11 @@ export default function Dashboard() {
       if (jobsRes.error) throw jobsRes.error;
       setJobs(jobsRes.data || []);
       setOrg(orgRes.data);
+      setLoadError(false);
     } catch (e) {
       console.error(e);
       toast.error('Could not load jobs', 'Pull down to try again');
+      setLoadError(true);
     }
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -117,6 +121,7 @@ export default function Dashboard() {
   );
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
+  if (loadError && jobs.length === 0) return <View style={styles.loading}><LoadError onRetry={() => { setLoading(true); fetchData(); }} /></View>;
 
   return (
     <View style={styles.container}>

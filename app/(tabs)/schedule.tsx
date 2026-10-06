@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { LoadError } from '../../components/LoadError';
 import { toLocalDateStr } from '../../lib/formatters';
 
 export default function Schedule() {
@@ -11,15 +12,17 @@ export default function Schedule() {
   const router = useRouter();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   useFocusEffect(useCallback(() => { fetchJobs(); }, [user?.id]));
 
   const fetchJobs = async () => {
     if (!user?.id) return;
-    const { data } = await supabase.from('jobs').select('*')
+    const { data, error } = await supabase.from('jobs').select('*')
       .eq('assigned_to', user.id).order('date').order('time_start');
-    setJobs(data || []);
+    setLoadError(!!error);
+    if (!error) setJobs(data || []);
     setLoading(false);
   };
 
@@ -40,6 +43,7 @@ export default function Schedule() {
   const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444', new:'#6B7280', pending:'#6B7280', travelling:'#8B5CF6', on_site:'#0EA5E9' };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
+  if (loadError && jobs.length === 0) return <View style={styles.loading}><LoadError onRetry={() => { setLoading(true); fetchJobs(); }} /></View>;
 
   return (
     <View style={styles.container}>

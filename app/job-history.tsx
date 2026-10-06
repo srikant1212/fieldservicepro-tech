@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { toast } from '../lib/toast';
+import { LoadError } from '../components/LoadError';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981', warning: '#F59E0B', danger: '#EF4444' };
 const STATUS_COLORS: Record<string,string> = { scheduled: COLORS.primary, in_progress: COLORS.warning, completed: COLORS.success, cancelled: COLORS.danger };
@@ -14,6 +15,7 @@ export default function JobHistory() {
   const router = useRouter();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState<'all'|'completed'|'cancelled'>('all');
 
   useFocusEffect(useCallback(() => { fetchJobs(); }, [user?.id]));
@@ -26,7 +28,8 @@ export default function JobHistory() {
       .in('status', ['completed', 'cancelled'])
       .order('date', { ascending: false });
     if (error) toast.error('Could not load job history');
-    setJobs(data || []);
+    setLoadError(!!error);
+    if (!error) setJobs(data || []);
     setLoading(false);
   };
 
@@ -50,7 +53,7 @@ export default function JobHistory() {
           </TouchableOpacity>
         ))}
       </View>
-      {loading ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} /> : (
+      {loading ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} /> : loadError && jobs.length === 0 ? <LoadError onRetry={fetchJobs} /> : (
         <FlatList data={filtered} keyExtractor={i => i.id}
           contentContainerStyle={{ padding: 16, gap: 10 }}
           ListEmptyComponent={<View style={{ alignItems: 'center', marginTop: 40 }}><Ionicons name="folder-open-outline" size={48} color={COLORS.gray} /><Text style={{ color: COLORS.gray, marginTop: 12 }}>No jobs found</Text></View>}

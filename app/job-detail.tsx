@@ -8,6 +8,7 @@ import { startJob, notifyOnTheWay, updateJob } from '../lib/jobActions';
 import { useAuthStore } from '../stores/authStore';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
+import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
 import { formatCurrency } from '../lib/formatters';
 
@@ -131,8 +132,9 @@ export default function JobDetail() {
 
   const handleComplete = async () => {
     const completedAt = new Date().toISOString();
+    const closingNotes = formatClosingNotes(closingAnswers) || null;
     const { error } = await updateJob(id as string,
-      { status: 'completed', closing_notes: formatClosingNotes(closingAnswers) || null },
+      { status: 'completed', closing_notes: closingNotes },
       { completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null });
     if (error) {
       haptic.error();
@@ -146,9 +148,10 @@ export default function JobDetail() {
       job_id: id, user_id: user?.id, action: 'completed', details: 'Job completed by technician'
     }).then(() => {});
     // Auto-save PDF report to storage
-    supabase.functions.invoke('send-job-report', {
-      body: { job_id: id, customer_email: job?.customer_email, customer_name: job?.customer_name, job_number: job?.job_number, save_only: true }
-    }).then((res: any) => {
+    const completedJob = { ...job, status: 'completed', closing_notes: closingNotes, completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null };
+    createJobReportPdf(completedJob, user, { base64: true }).then(({ base64 }) => supabase.functions.invoke('send-job-report', {
+      body: { job_id: id, customer_email: job?.customer_email, customer_name: job?.customer_name, job_number: job?.job_number, save_only: true, pdf_base64: base64 }
+    })).then((res: any) => {
       if (res?.data?.report_url) {
         supabase.from('jobs').update({ report_url: res.data.report_url } as any).eq('id', id as string).then(() => {});
       }
@@ -233,6 +236,10 @@ export default function JobDetail() {
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('job-photos').getPublicUrl(fileName);
       setPhotos(prev => [...prev, urlData.publicUrl]);
+      // Also record it in job_photos, which is where the web app looks for a job's photos.
+      // The web groups photos as before/after; photos from this app are filed under "after".
+      const { error: recordError } = await supabase.from('job_photos').insert({ job_id: id, file_path: fileName, photo_type: 'after', uploaded_by: user?.id } as any);
+      if (recordError) console.warn('job_photos insert failed:', recordError.message);
       // Log to activity feed
       try { await supabase.from('job_activity_log').insert({
         job_id: id,

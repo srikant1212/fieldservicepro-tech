@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } f
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { getOrgId } from '../../lib/getOrgId';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function Profile() {
@@ -17,10 +18,13 @@ export default function Profile() {
   }, [user?.id]));
 
   const fetchData = async () => {
-    if (!user?.organization_id) return;
+    if (!user?.id) return;
+    const orgId = await getOrgId(user);
     const [orgRes, jobsRes] = await Promise.all([
-      supabase.from('organizations').select('name, logo_url, email, phone').eq('id', user.organization_id).single(),
-      supabase.from('jobs').select('status').eq('assigned_to', user.id || ''),
+      orgId
+        ? supabase.from('organizations').select('name, logo_url, email, phone').eq('id', orgId).single()
+        : Promise.resolve({ data: null }),
+      supabase.from('jobs').select('status').eq('assigned_to', user.id),
     ]);
     setOrg(orgRes.data);
     const jobs = jobsRes.data || [];
@@ -38,6 +42,8 @@ export default function Profile() {
     ]);
   };
 
+  // 'sub_contractor' -> 'Sub Contractor'
+  const employmentType = (user?.employment_type || 'Technician').replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const initials = (user?.display_name || 'T').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
@@ -48,11 +54,7 @@ export default function Profile() {
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
         <Text style={styles.name}>{user?.display_name || 'Technician'}</Text>
-        <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile' as any)}>
-          <Ionicons name="pencil-outline" size={14} color="#0066FF" />
-          <Text style={styles.editBtnText}>Edit Profile</Text>
-        </TouchableOpacity>
-        <Text style={styles.role}>{user?.employment_type || 'Technician'} · {org?.name}</Text>
+        <Text style={styles.role}>{[employmentType, org?.name].filter(Boolean).join(' · ')}</Text>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
@@ -132,8 +134,8 @@ export default function Profile() {
             { label: 'Job History', icon: 'time-outline', route: '/job-history' },
             { label: 'My Availability', icon: 'calendar-outline', route: '/availability' },
             { label: 'Navigate to Job', icon: 'map-outline', route: '/map' },
-          ].map((item, i) => (
-            <TouchableOpacity key={item.label} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: '#E2E8F0' }}
+          ].map((item, i, links) => (
+            <TouchableOpacity key={item.label} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: i < links.length - 1 ? 1 : 0, borderBottomColor: '#E2E8F0' }}
               onPress={() => router.push(item.route as any)}>
               <Ionicons name={item.icon as any} size={20} color="#0066FF" style={{ marginRight: 12 }} />
               <Text style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#1E293B' }}>{item.label}</Text>
@@ -179,8 +181,6 @@ const styles = StyleSheet.create({
   skillText: { fontSize: 13, fontWeight: '600', color: '#0066FF' },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   infoText: { fontSize: 15, color: '#1E293B' },
-  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 8 },
-  editBtnText: { fontSize: 12, fontWeight: '700', color: '#0066FF' },
   signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEF2F2', borderRadius: 16, margin: 16, padding: 16 },
   signOutText: { fontSize: 16, fontWeight: '700', color: '#EF4444' },
   version: { textAlign: 'center', fontSize: 12, color: '#CBD5E1', marginBottom: 8 },

@@ -26,10 +26,15 @@ export default function NotificationSettings() {
   };
 
   const handleTogglePush = async (val: boolean) => {
+    if (!user?.id) return;
     setPushEnabled(val);
     setSaving(true);
-    await supabase.from('profiles').update({ push_notifications: val }).eq('id', user?.id);
+    const { error } = await supabase.from('profiles').update({ push_notifications: val }).eq('id', user.id);
     setSaving(false);
+    if (error) {
+      setPushEnabled(!val);
+      Alert.alert('Error', 'Failed to save notification settings. Please try again.');
+    }
   };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color={COLORS.primary} /></View>;

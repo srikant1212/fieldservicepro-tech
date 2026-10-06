@@ -207,10 +207,12 @@ export default function JobDetail() {
   const uploadPhoto = async (uri: string) => {
     setUploadingPhoto(true);
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileName = `${id}/${Date.now()}.jpg`;
-      await supabase.storage.from('job-photos').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+      // Upload as ArrayBuffer — blobs upload as 0-byte files from React Native
+      const arrayBuffer = await fetch(uri).then(res => res.arrayBuffer());
+      if (!arrayBuffer.byteLength) throw new Error('Empty file');
+      const fileName = `${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('job-photos').upload(fileName, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
+      if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('job-photos').getPublicUrl(fileName);
       setPhotos(prev => [...prev, urlData.publicUrl]);
       // Log to activity feed
@@ -427,7 +429,7 @@ export default function JobDetail() {
               {materials.length > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{materials.length}</Text></View>}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {totalMaterialCost > 0 && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
+              {totalMaterialCost > 0 && !!user?.can_view_financials && <Text style={{ fontSize: 13, fontWeight: '700', color: '#10B981' }}>${totalMaterialCost.toFixed(2)}</Text>}
               <Ionicons name={showMaterials ? 'chevron-up' : 'chevron-down'} size={18} color="#94A3B8" />
             </View>
           </TouchableOpacity>
@@ -437,7 +439,7 @@ export default function JobDetail() {
                 <View key={m.id} style={styles.materialRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E293B' }}>{m.name}</Text>
-                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity} × ${m.unit_cost} = ${m.total_cost}</Text>
+                    <Text style={{ fontSize: 12, color: '#94A3B8' }}>Qty: {m.quantity}{user?.can_view_financials ? ` × $${m.unit_cost} = $${m.total_cost}` : ''}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleRemoveMaterial(m.id)}>
                     <Ionicons name="trash-outline" size={18} color="#EF4444" />

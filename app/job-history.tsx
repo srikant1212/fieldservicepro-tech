@@ -36,11 +36,10 @@ export default function JobHistory() {
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight:12, padding:4 }}>
           <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={{ fontSize:18, fontWeight:'700', color:'#1E293B' }}>Job History</Text>
-      </View>
-      <View style={styles.header}>
-        <Text style={styles.title}>Job History</Text>
-        <Text style={styles.sub}>{jobs.length} total jobs</Text>
+        <View>
+          <Text style={{ fontSize:18, fontWeight:'700', color:'#1E293B' }}>Job History</Text>
+          <Text style={styles.sub}>{jobs.length} total jobs</Text>
+        </View>
       </View>
       <View style={styles.filters}>
         {(['all','completed','cancelled'] as const).map(f => (
@@ -63,7 +62,7 @@ export default function JobHistory() {
               </View>
               <Text style={styles.meta}>{item.customer_name}</Text>
               {!!item.date && <Text style={styles.meta}>{new Date(item.date+'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</Text>}
-              {!!item.estimate && <Text style={[styles.meta, { color: COLORS.success, fontWeight: '700' }]}>{`Est: $${item.estimate}`}</Text>}
+              {!!item.estimate && !!user?.can_view_financials && <Text style={[styles.meta, { color: COLORS.success, fontWeight: '700' }]}>{`Est: $${item.estimate}`}</Text>}
             </TouchableOpacity>
           )}
         />
@@ -74,8 +73,6 @@ export default function JobHistory() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  title: { fontSize: 22, fontWeight: '900', color: '#1E293B' },
   sub: { fontSize: 13, color: '#64748B', marginTop: 2 },
   filters: { flexDirection: 'row', padding: 16, gap: 8 },
   filterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9' },

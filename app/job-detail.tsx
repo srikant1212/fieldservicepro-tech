@@ -135,7 +135,13 @@ export default function JobDetail() {
     const closingNotes = formatClosingNotes(closingAnswers) || null;
     const { error } = await updateJob(id as string,
       { status: 'completed', closing_notes: closingNotes },
-      { completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null });
+      {
+        completed_at: completedAt, time_spent_seconds: timerSeconds, customer_signature_name: signerName || null,
+        // Same answers in their own columns (also written by the web app)
+        problem_description: closingAnswers.problem.trim() || null,
+        troubleshooting_notes: closingAnswers.troubleshooting.trim() || null,
+        resolution_notes: closingAnswers.resolution.trim() || null,
+      });
     if (error) {
       haptic.error();
       Alert.alert('Error', 'Failed to complete job. Please try again.');

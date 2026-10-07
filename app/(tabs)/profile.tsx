@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Linking, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { getOrgId } from '../../lib/getOrgId';
 import { useAuthStore } from '../../stores/authStore';
+import { confirmAndDeleteAccount } from '../../lib/deleteAccount';
 
 export default function Profile() {
   const { user, signOut, refreshUser } = useAuthStore();
   const router = useRouter();
   const [org, setOrg] = useState<any>(null);
   const [stats, setStats] = useState({ total: 0, completed: 0, inProgress: 0 });
+  const [deleting, setDeleting] = useState(false);
 
   useFocusEffect(useCallback(() => {
     refreshUser();
@@ -150,6 +152,13 @@ export default function Profile() {
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
           <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* Delete Account */}
+        <TouchableOpacity onPress={() => confirmAndDeleteAccount(signOut, setDeleting)} disabled={deleting}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12, marginBottom: 8, opacity: deleting ? 0.5 : 1 }}>
+          {deleting ? <ActivityIndicator color="#94A3B8" size="small" /> : <Ionicons name="trash-outline" size={16} color="#94A3B8" />}
+          <Text style={{ fontSize: 14, fontWeight: '600', color: '#94A3B8' }}>Delete Account</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>FSP Technician v1.1.0</Text>

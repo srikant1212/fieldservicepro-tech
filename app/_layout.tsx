@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useRouter, useSegments } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar } from 'expo-status-bar';
 
 function AuthGuard() {
   const { user, loading, initialize } = useAuthStore();
@@ -63,6 +64,7 @@ function AuthGuard() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style="dark" />
       <AuthGuard />
       <Toast />
     </GestureHandlerRootView>

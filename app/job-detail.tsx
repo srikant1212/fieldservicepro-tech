@@ -285,9 +285,7 @@ export default function JobDetail() {
     haptic.light();
   };
 
-  const handlePickPhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('Permission needed'); return; }
+  const handlePickPhoto = () => {
     Alert.alert('Add Photo', 'Choose source', [
       { text: 'Camera', onPress: () => launchCamera() },
       { text: 'Library', onPress: () => launchLibrary() },
@@ -295,14 +293,28 @@ export default function JobDetail() {
     ]);
   };
 
+  // Camera access is only asked for when the camera is chosen
   const launchCamera = async () => {
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-    if (!result.canceled) uploadPhoto(result.assets[0].uri);
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Camera access needed', 'Allow camera access in Settings to take photos of the job.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ]);
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+      if (!result.canceled) uploadPhoto(result.assets[0].uri);
+    } catch (e: any) { Alert.alert('Could not open the camera', e.message); }
   };
 
+  // The system photo picker needs no permission: the app only receives the photos that are picked
   const launchLibrary = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsMultipleSelection: true, selectionLimit: 5 });
-    if (!result.canceled) result.assets.forEach(a => uploadPhoto(a.uri));
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsMultipleSelection: true, selectionLimit: 5 });
+      if (!result.canceled) result.assets.forEach(a => uploadPhoto(a.uri));
+    } catch (e: any) { Alert.alert('Could not open your photos', e.message); }
   };
 
   const uploadPhoto = async (uri: string) => {

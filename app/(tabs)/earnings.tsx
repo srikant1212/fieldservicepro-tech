@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981' };
 
 export default function Earnings() {
+  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function Earnings() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <Text style={styles.title}>My Earnings</Text>
       </View>
       <View style={styles.totalCard}>

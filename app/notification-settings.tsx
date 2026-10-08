@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { registerForPushNotifications, unregisterPushNotifications } from '../lib/notifications';
+import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC', success: '#10B981' };
 
 export default function NotificationSettings() {
+  const headerTop = useSafeHeaderTop();
   const router = useRouter();
   const { user } = useAuthStore();
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -51,7 +53,7 @@ export default function NotificationSettings() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
         </TouchableOpacity>

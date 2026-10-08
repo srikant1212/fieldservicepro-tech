@@ -6,10 +6,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
+import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', accepted:'#14B8A6', travelling:'#8B5CF6', on_site:'#0EA5E9', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444' };
 
 export default function MapScreen() {
+  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
@@ -53,7 +55,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginRight: 8 }}>
           <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>

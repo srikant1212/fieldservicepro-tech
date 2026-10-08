@@ -6,8 +6,10 @@ import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadError } from '../../components/LoadError';
 import { toLocalDateStr } from '../../lib/formatters';
+import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 export default function Schedule() {
+  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const router = useRouter();
   const [jobs, setJobs] = useState<any[]>([]);
@@ -47,7 +49,7 @@ export default function Schedule() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth()-1, 1))}>
           <Ionicons name="chevron-back" size={24} color="#1E293B" />
         </TouchableOpacity>

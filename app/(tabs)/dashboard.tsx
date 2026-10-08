@@ -10,6 +10,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { LoadError } from '../../components/LoadError';
 import { formatDate, toLocalDateStr } from '../../lib/formatters';
+import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: '#3B82F6', in_progress: '#F59E0B', completed: '#10B981', cancelled: '#EF4444',
@@ -17,6 +18,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const router = useRouter();
   const [jobs, setJobs] = useState<any[]>([]);
@@ -145,7 +147,7 @@ export default function Dashboard() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           {org?.logo_url ? (
             <Image source={{ uri: org.logo_url }} style={{ width: 36, height: 36, borderRadius: 8, resizeMode: 'contain', backgroundColor: 'rgba(255,255,255,0.2)' }} />

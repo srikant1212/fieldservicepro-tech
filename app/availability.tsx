@@ -7,11 +7,13 @@ import { useAuthStore } from '../stores/authStore';
 import { getOrgId } from '../lib/getOrgId';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
+import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const TIMES = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 
 export default function Availability() {
+  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function Availability() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginRight: 12 }}>
           <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>

@@ -12,6 +12,7 @@ import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
 import { formatCurrency, telUrl } from '../lib/formatters';
 import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
+import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', accepted:'#14B8A6', travelling:'#F59E0B', 
@@ -33,6 +34,7 @@ const ACTIVITY_STYLES: Record<string, { icon: string; color: string; bg: string 
 const DEFAULT_ACTIVITY_STYLE = { icon: 'time-outline', color: '#F59E0B', bg: '#FEF3C7' };
 
 export default function JobDetail() {
+  const headerTop = useSafeHeaderTop();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuthStore();
@@ -504,7 +506,7 @@ export default function JobDetail() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: color }]}>
+      <View style={[styles.header, { borderBottomColor: color, paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#1E293B" />
         </TouchableOpacity>

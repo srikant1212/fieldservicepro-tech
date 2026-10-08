@@ -4,10 +4,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 
 const SKILLS = ['Computer Repair','Networking','Electrical','Plumbing','HVAC','Painting','Carpentry','Cleaning','Landscaping','Security Systems','Solar','Other'];
 
 export default function Onboarding() {
+  const headerTop = useSafeHeaderTop();
   const { user, refreshUser } = useAuthStore();
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -54,7 +56,7 @@ export default function Onboarding() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <View style={styles.logoBox}><Ionicons name="construct" size={32} color="#fff" /></View>
         <Text style={styles.title}>Welcome to FSP!</Text>
         <Text style={styles.subtitle}>Set up your tech profile</Text>

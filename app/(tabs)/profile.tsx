@@ -6,8 +6,10 @@ import { supabase } from '../../lib/supabase';
 import { getOrgId } from '../../lib/getOrgId';
 import { useAuthStore } from '../../stores/authStore';
 import { confirmAndDeleteAccount } from '../../lib/deleteAccount';
+import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 export default function Profile() {
+  const headerTop = useSafeHeaderTop();
   const { user, signOut, refreshUser } = useAuthStore();
   const router = useRouter();
   const [org, setOrg] = useState<any>(null);
@@ -51,7 +53,7 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       {/* Profile Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>

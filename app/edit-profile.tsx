@@ -4,12 +4,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC' };
 
 const SKILLS = ['Plumbing','Electrical','HVAC','IT Support','Cleaning','Painting','Carpentry','Landscaping','Security','Appliance Repair'];
 
 export default function EditProfile() {
+  const headerTop = useSafeHeaderTop();
   const router = useRouter();
   const { user, refreshUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,7 @@ export default function EditProfile() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
         </TouchableOpacity>

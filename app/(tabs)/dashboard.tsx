@@ -12,7 +12,7 @@ import { formatDate, toLocalDateStr } from '../../lib/formatters';
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: '#3B82F6', in_progress: '#F59E0B', completed: '#10B981', cancelled: '#EF4444',
-  new: '#6B7280', pending: '#6B7280', travelling: '#8B5CF6', on_site: '#0EA5E9',
+  new: '#6B7280', pending: '#6B7280', accepted: '#14B8A6', travelling: '#8B5CF6', on_site: '#0EA5E9',
 };
 
 export default function Dashboard() {
@@ -58,6 +58,14 @@ export default function Dashboard() {
     fetchData();
   };
 
+  // Accepting only tells the office the job has been seen; the customer is not contacted
+  const handleAccept = async (job: any) => {
+    const { error } = await supabase.from('jobs').update({ status: 'accepted' } as any).eq('id', job.id);
+    if (error) Alert.alert('Error', error.code === '23514' ? 'Accepting jobs needs a database update that has not been applied yet. Please contact your administrator.' : 'Failed to accept the job. Please try again.');
+    else supabase.from('job_activity_log').insert({ job_id: job.id, user_id: user?.id, action: 'accepted', details: 'Job accepted by technician' }).then(() => {});
+    fetchData();
+  };
+
   // Starting travel emails and texts the customer, so ask first
   const handleStartTravel = (job: any) => {
     Alert.alert('Start Travel?', 'This will notify the customer you are on the way.', [
@@ -93,6 +101,12 @@ export default function Dashboard() {
         {overdue && job.date ? <View style={styles.jobMeta}><Ionicons name="alert-circle-outline" size={12} color="#EF4444" /><Text style={[styles.jobMetaText, { color: '#EF4444', fontWeight: '600' }]}>Was due {new Date(job.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</Text></View> : null}
         
         {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#14B8A6' }]} onPress={() => handleAccept(job)}>
+            <Ionicons name="checkmark-outline" size={14} color="#fff" />
+            <Text style={styles.startBtnText}>Accept Job</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'accepted' && (
           <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#F59E0B' }]} onPress={() => handleStartTravel(job)}>
             <Ionicons name="car-outline" size={14} color="#fff" />
             <Text style={styles.startBtnText}>Start Travel</Text>

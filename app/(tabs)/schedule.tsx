@@ -40,7 +40,7 @@ export default function Schedule() {
   const selectedJobs = jobs.filter(j => j.date === selectedStr);
   const jobDates = new Set(jobs.map(j => j.date));
 
-  const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444', new:'#6B7280', pending:'#6B7280', travelling:'#8B5CF6', on_site:'#0EA5E9' };
+  const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444', new:'#6B7280', pending:'#6B7280', accepted:'#14B8A6', travelling:'#8B5CF6', on_site:'#0EA5E9' };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
   if (loadError && jobs.length === 0) return <View style={styles.loading}><LoadError onRetry={() => { setLoading(true); fetchJobs(); }} /></View>;

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 
-const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444' };
+const STATUS_COLORS: Record<string,string> = { scheduled:'#3B82F6', accepted:'#14B8A6', travelling:'#8B5CF6', on_site:'#0EA5E9', in_progress:'#F59E0B', completed:'#10B981', cancelled:'#EF4444' };
 
 export default function MapScreen() {
   const { user } = useAuthStore();

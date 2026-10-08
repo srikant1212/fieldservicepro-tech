@@ -13,12 +13,12 @@ import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClos
 import { formatCurrency } from '../lib/formatters';
 
 const STATUS_COLORS: Record<string,string> = { 
-  new:'#6B7280', scheduled:'#8B5CF6', travelling:'#F59E0B', 
+  new:'#6B7280', scheduled:'#8B5CF6', accepted:'#14B8A6', travelling:'#F59E0B', 
   on_site:'#EF4444', in_progress:'#0066FF', completed:'#10B981', 
   cancelled:'#EF4444', pending:'#F59E0B' 
 };
 const STATUS_LABELS: Record<string,string> = { 
-  new:'New', scheduled:'Scheduled', travelling:'Travelling', 
+  new:'New', scheduled:'Scheduled', accepted:'Accepted', travelling:'Travelling', 
   on_site:'On Site', in_progress:'In Progress', completed:'Completed', 
   cancelled:'Cancelled', pending:'Pending' 
 };
@@ -104,6 +104,17 @@ export default function JobDetail() {
   }, [jobStartedAt]);
 
   const formatTimer = (s: number) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+
+  // Accepting only tells the office the job has been seen; the customer is not contacted
+  const handleAccept = async () => {
+    haptic.medium();
+    const { error } = await supabase.from('jobs').update({ status: 'accepted' } as any).eq('id', id as string);
+    if (error) { Alert.alert('Error', error.code === '23514' ? 'Accepting jobs needs a database update that has not been applied yet. Please contact your administrator.' : 'Failed to accept the job. Please try again.'); return; }
+    setJob((prev: any) => ({ ...prev, status: 'accepted' }));
+    const entry = { job_id: id, user_id: user?.id, action: 'accepted', details: 'Job accepted by technician' };
+    const { error: logError } = await supabase.from('job_activity_log').insert(entry);
+    if (!logError) setActivity(prev => [{ ...entry, created_at: new Date().toISOString() }, ...prev]);
+  };
 
   // Starting travel emails and texts the customer, so ask first
   const handleStart = () => {
@@ -322,7 +333,8 @@ export default function JobDetail() {
 
   const handleRevertStatus = () => {
     const statusMap: Record<string,string> = {
-      travelling: 'scheduled',
+      accepted: 'scheduled',
+      travelling: 'accepted',
       on_site: 'travelling',
       in_progress: 'on_site',
     };
@@ -593,7 +605,7 @@ export default function JobDetail() {
                 <Text style={{ fontSize: 13, fontWeight: '600', color: '#0066FF' }}>Send ETA</Text>
               </TouchableOpacity>
             ) : null}
-            {['travelling','on_site','in_progress'].includes(job.status) ? (
+            {['accepted','travelling','on_site','in_progress'].includes(job.status) ? (
               <TouchableOpacity onPress={handleRevertStatus}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FEE2E2' }}>
                 <Ionicons name="arrow-undo-outline" size={16} color="#EF4444" />
@@ -679,6 +691,12 @@ export default function JobDetail() {
       {/* Bottom Action */}
       <View style={styles.bottomBar}>
         {(job.status === 'new' || job.status === 'scheduled' || job.status === 'pending') && (
+          <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#14B8A6' }]} onPress={handleAccept}>
+            <Ionicons name="checkmark-outline" size={20} color="#fff"/>
+            <Text style={styles.startBtnText}>Accept Job</Text>
+          </TouchableOpacity>
+        )}
+        {job.status === 'accepted' && (
           <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
             <Ionicons name="car-outline" size={20} color="#fff"/>
             <Text style={styles.startBtnText}>Start Travel</Text>

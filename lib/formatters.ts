@@ -41,3 +41,8 @@ export function toLocalDateStr(date: Date = new Date()): string {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+/** A dialable link: iOS refuses "tel:" numbers that contain spaces, brackets or dashes */
+export function telUrl(phone: string): string {
+  return `tel:${String(phone || '').replace(/[^\d+]/g, '')}`;
+}

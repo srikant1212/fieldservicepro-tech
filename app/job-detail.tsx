@@ -10,7 +10,7 @@ import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
 import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
-import { formatCurrency } from '../lib/formatters';
+import { formatCurrency, telUrl } from '../lib/formatters';
 import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
 
 const STATUS_COLORS: Record<string,string> = { 
@@ -386,7 +386,7 @@ export default function JobDetail() {
     if (!job?.customer_phone) { Alert.alert('No phone number'); return; }
     Alert.alert('Call Customer', job.customer_phone, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Call', onPress: () => Linking.openURL(`tel:${job.customer_phone}`) },
+      { text: 'Call', onPress: () => Linking.openURL(telUrl(job.customer_phone)) },
     ]);
   };
 

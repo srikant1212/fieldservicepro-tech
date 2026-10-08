@@ -526,7 +526,7 @@ export default function JobDetail() {
         </View>
       )}
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         {/* Customer Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Customer</Text>

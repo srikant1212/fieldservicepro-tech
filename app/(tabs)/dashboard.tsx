@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image, Alert } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,8 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [org, setOrg] = useState<any>(null);
   const [loadError, setLoadError] = useState(false);
+  const [showOverdue, setShowOverdue] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   useFocusEffect(useCallback(() => { fetchData(); }, [user?.id]));
 
@@ -85,7 +87,9 @@ export default function Dashboard() {
     fetchData();
   };
 
-  const renderJobCard = (job: any, overdue = false) => (
+  const daysOverdue = (date: string) => Math.max(1, Math.round((new Date(today + 'T00:00:00').getTime() - new Date(date + 'T00:00:00').getTime()) / 86400000));
+
+  const renderJobCard = (job: any) => (
     <TouchableOpacity key={job.id} style={styles.jobCard} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
       <View style={[styles.statusBar, { backgroundColor: STATUS_COLORS[job.status] || '#94A3B8' }]} />
       <View style={styles.jobBody}>
@@ -98,7 +102,6 @@ export default function Dashboard() {
         <Text style={styles.jobCustomer}>{job.customer_name}</Text>
         {job.address ? <View style={styles.jobMeta}><Ionicons name="location-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText} numberOfLines={1}>{job.address}</Text></View> : null}
         {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
-        {overdue && job.date ? <View style={styles.jobMeta}><Ionicons name="alert-circle-outline" size={12} color="#EF4444" /><Text style={[styles.jobMetaText, { color: '#EF4444', fontWeight: '600' }]}>Was due {new Date(job.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</Text></View> : null}
         
         {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
           <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#14B8A6' }]} onPress={() => handleAccept(job)}>
@@ -150,9 +153,17 @@ export default function Dashboard() {
             <Text style={styles.orgName}>{org?.name || 'Field Service Pro'}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notification-settings' as any)}>
-          <Ionicons name="notifications-outline" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {overdueJobs.length > 0 && (
+            <TouchableOpacity style={styles.overdueBadge} onPress={() => { setShowOverdue(true); setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100); }}>
+              <Ionicons name="alert-circle" size={14} color="#fff" />
+              <Text style={styles.overdueBadgeText}>{overdueJobs.length} overdue</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notification-settings' as any)}>
+            <Ionicons name="notifications-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Stats */}
@@ -172,7 +183,7 @@ export default function Dashboard() {
         ))}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor="#0066FF" />}>
 
         {/* Active job banner */}
@@ -187,14 +198,6 @@ export default function Dashboard() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
           </TouchableOpacity>
-        )}
-
-        {/* Overdue — past-dated jobs that were never completed */}
-        {overdueJobs.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: '#EF4444' }]}>Overdue ({overdueJobs.length})</Text>
-            {overdueJobs.map(job => renderJobCard(job, true))}
-          </View>
         )}
 
         {/* Today's jobs */}
@@ -228,6 +231,26 @@ export default function Dashboard() {
           </View>
         )}
 
+        {/* Overdue — past-dated jobs that were never completed. Collapsed by default; open the job to act on it. */}
+        {overdueJobs.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity style={styles.overdueHeader} onPress={() => setShowOverdue(v => !v)}>
+              <Text style={[styles.sectionTitle, { color: '#EF4444', marginTop: 0, marginBottom: 0 }]}>Overdue ({overdueJobs.length})</Text>
+              <Ionicons name={showOverdue ? 'chevron-up' : 'chevron-down'} size={18} color="#EF4444" />
+            </TouchableOpacity>
+            {showOverdue && overdueJobs.map(job => (
+              <TouchableOpacity key={job.id} style={styles.overdueRow} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
+                  {job.customer_name ? <Text style={[styles.jobCustomer, { marginBottom: 0 }]} numberOfLines={1}>{job.customer_name}</Text> : null}
+                </View>
+                <Text style={styles.overdueDays}>{daysOverdue(job.date)} {daysOverdue(job.date) === 1 ? 'day' : 'days'} overdue</Text>
+                <Ionicons name="chevron-forward" size={16} color="#94A3B8" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -240,6 +263,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0066FF', paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
   greeting: { fontSize: 22, fontWeight: '800', color: '#fff' },
   orgName: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  overdueBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EF4444', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6 },
+  overdueBadgeText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  overdueHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 10, paddingVertical: 4 },
+  overdueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#FEE2E2' },
+  overdueDays: { fontSize: 12, fontWeight: '700', color: '#EF4444' },
   notifBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   statsRow: { flexDirection: 'row', backgroundColor: '#0066FF', paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
   statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', gap: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 3 },

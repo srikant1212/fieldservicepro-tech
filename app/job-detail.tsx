@@ -149,6 +149,16 @@ export default function JobDetail() {
     }
   };
 
+  // Completing emails the customer, so ask first
+  const confirmComplete = () => {
+    if (completing) return;
+    if (!job?.customer_email) { handleComplete(); return; }
+    Alert.alert('Complete Job?', 'A job completion email will be sent to the customer.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Proceed', onPress: () => handleComplete() },
+    ]);
+  };
+
   const handleComplete = async () => {
     // A second tap while the first is still saving would complete the job (and email the customer) twice
     if (completing) return;
@@ -779,7 +789,7 @@ export default function JobDetail() {
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowCompleteModal(false)}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalConfirmBtn, completing && { opacity: 0.6 }]} onPress={handleComplete} disabled={completing}>
+              <TouchableOpacity style={[styles.modalConfirmBtn, completing && { opacity: 0.6 }]} onPress={confirmComplete} disabled={completing}>
                 {completing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Complete Job</Text>}
               </TouchableOpacity>
             </View>

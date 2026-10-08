@@ -118,9 +118,9 @@ export default function JobDetail() {
 
   // Starting travel emails and texts the customer, so ask first
   const handleStart = () => {
-    Alert.alert('Start Travel?', 'This will notify the customer you are on the way.', [
+    Alert.alert('Start Travel?', 'Customer will be notified by email and SMS that you are on the way.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Confirm', onPress: async () => {
+      { text: 'Proceed', onPress: async () => {
         haptic.medium();
         const { error } = await supabase.from('jobs').update({ status: 'travelling' } as any).eq('id', id as string);
         if (error) { Alert.alert('Error', 'Failed to start travel. Please try again.'); return; }

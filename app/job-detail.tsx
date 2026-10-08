@@ -11,6 +11,7 @@ import { toast } from '../lib/toast';
 import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
 import { formatCurrency } from '../lib/formatters';
+import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', accepted:'#14B8A6', travelling:'#F59E0B', 
@@ -104,6 +105,19 @@ export default function JobDetail() {
   }, [jobStartedAt]);
 
   const formatTimer = (s: number) => `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+
+  // Moves the job to another day and records why in the job's activity (the office sees it there)
+  const [showReschedule, setShowReschedule] = useState(false);
+  const handleReschedule = async (date: string, reason: string) => {
+    const { error } = await supabase.from('jobs').update({ date } as any).eq('id', id as string);
+    if (error) { Alert.alert('Error', 'Failed to reschedule the job. Please try again.'); return false; }
+    setJob((prev: any) => ({ ...prev, date }));
+    const entry = { job_id: id, user_id: user?.id, action: 'rescheduled', details: `Job rescheduled to ${formatRescheduleDate(date)}${reason ? ` — ${reason}` : ''}` };
+    const { error: logError } = await supabase.from('job_activity_log').insert(entry);
+    if (!logError) setActivity(prev => [{ ...entry, created_at: new Date().toISOString() }, ...prev]);
+    toast.success('Job rescheduled', formatRescheduleDate(date));
+    return true;
+  };
 
   // Accepting only tells the office the job has been seen; the customer is not contacted
   const handleAccept = async () => {
@@ -615,6 +629,11 @@ export default function JobDetail() {
                 <Text style={{ fontSize: 13, fontWeight: '600', color: '#0066FF' }}>Send ETA</Text>
               </TouchableOpacity>
             ) : null}
+            <TouchableOpacity onPress={() => setShowReschedule(true)}
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+              <Ionicons name="calendar-outline" size={16} color="#0066FF" />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#0066FF' }}>Reschedule</Text>
+            </TouchableOpacity>
             {['accepted','travelling','on_site','in_progress'].includes(job.status) ? (
               <TouchableOpacity onPress={handleRevertStatus}
                 style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#FEE2E2' }}>
@@ -697,6 +716,7 @@ export default function JobDetail() {
       </ScrollView>
 
       {photoModal}
+      <RescheduleSheet visible={showReschedule} currentDate={job.date} onClose={() => setShowReschedule(false)} onSave={handleReschedule} />
 
       {/* Bottom Action */}
       <View style={styles.bottomBar}>

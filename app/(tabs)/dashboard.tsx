@@ -7,6 +7,7 @@ import { getOrgId } from '../../lib/getOrgId';
 import { startJob, notifyOnTheWay } from '../../lib/jobActions';
 import { toast } from '../../lib/toast';
 import { useAuthStore } from '../../stores/authStore';
+import { useNotificationStore } from '../../stores/notificationStore';
 import { LoadError } from '../../components/LoadError';
 import { formatDate, toLocalDateStr } from '../../lib/formatters';
 
@@ -25,8 +26,9 @@ export default function Dashboard() {
   const [loadError, setLoadError] = useState(false);
   const [showOverdue, setShowOverdue] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const { unread, refreshUnread } = useNotificationStore();
 
-  useFocusEffect(useCallback(() => { fetchData(); }, [user?.id]));
+  useFocusEffect(useCallback(() => { fetchData(); refreshUnread(user?.id); }, [user?.id]));
 
   const fetchData = async () => {
     if (!user?.id) return;
@@ -160,8 +162,11 @@ export default function Dashboard() {
               <Text style={styles.overdueBadgeText}>{overdueJobs.length} overdue</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/notification-settings' as any)}>
+          <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(tabs)/notifications' as any)}>
             <Ionicons name="notifications-outline" size={24} color="#fff" />
+            {unread > 0 ? (
+              <View style={styles.notifCount}><Text style={styles.notifCountText}>{unread > 9 ? '9+' : unread}</Text></View>
+            ) : null}
           </TouchableOpacity>
         </View>
       </View>
@@ -263,6 +268,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0066FF', paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
   greeting: { fontSize: 22, fontWeight: '800', color: '#fff' },
   orgName: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  notifCount: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  notifCountText: { fontSize: 10, fontWeight: '800', color: '#fff' },
   overdueBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EF4444', borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6 },
   overdueBadgeText: { fontSize: 12, fontWeight: '700', color: '#fff' },
   overdueHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 10, paddingVertical: 4 },

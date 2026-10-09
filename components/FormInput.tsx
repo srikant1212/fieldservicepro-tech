@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TextInputProps, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TextInputProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 
 interface FormInputProps extends TextInputProps {
   label?: string;
@@ -7,13 +7,15 @@ interface FormInputProps extends TextInputProps {
   error?: string;
   /** Taller box for notes and descriptions */
   multilineHeight?: number;
+  /** Overrides the wrapper, e.g. to drop the bottom margin */
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 // The one text field used on every form: uppercase label, 1.5px border, 12 radius, 15pt text
-export function FormInput({ label, required, error, multilineHeight, style, ...inputProps }: FormInputProps) {
+export function FormInput({ label, required, error, multilineHeight, containerStyle, style, ...inputProps }: FormInputProps) {
   const multiline = !!inputProps.multiline;
   return (
-    <View style={styles.field}>
+    <View style={[styles.field, containerStyle]}>
       {label ? (
         <View style={styles.labelRow}>
           <Text style={styles.label}>{label}</Text>

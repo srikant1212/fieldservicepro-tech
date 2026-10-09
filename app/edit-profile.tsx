@@ -69,9 +69,6 @@ export default function EditProfile() {
           <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
         </TouchableOpacity>
         <Text style={styles.title}>Edit Profile</Text>
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
-        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -109,6 +106,9 @@ export default function EditProfile() {
             ))}
           </View>
         </View>
+        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+        </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   title: { flex: 1, fontSize: 18, fontWeight: '800', color: '#1E293B' },
-  saveBtn: { backgroundColor: '#0066FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  saveBtn: { backgroundColor: '#0066FF', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   cardTitle: { fontSize: 15, fontWeight: '800', color: '#1E293B', marginBottom: 12 },
   label: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },

@@ -94,9 +94,7 @@ export default function Availability() {
           <Ionicons name="arrow-back" size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.title}>My Availability</Text>
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
@@ -147,6 +145,9 @@ export default function Availability() {
             )}
           </View>
         ))}
+        <TouchableOpacity style={[styles.bottomBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.bottomBtnText}>Save Availability</Text>}
+        </TouchableOpacity>
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -154,12 +155,12 @@ export default function Availability() {
 }
 
 const styles = StyleSheet.create({
+  bottomBtn: { backgroundColor: '#0066FF', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24, marginHorizontal: 16 },
+  bottomBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   title: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
-  saveBtn: { backgroundColor: '#0066FF', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 8 },
-  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   scroll: { flex: 1 },
   hint: { fontSize: 13, color: '#64748B', padding: 16, paddingBottom: 8 },
   dayCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 10, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },

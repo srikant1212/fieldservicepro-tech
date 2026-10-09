@@ -162,7 +162,7 @@ export default function Dashboard() {
             </View>
           ) : null}
           <View>
-            <Text style={styles.greeting}>Hey, {user?.display_name?.split(' ')[0]} 👋</Text>
+            <Text style={styles.greeting}>Hey, {user?.display_name?.split(' ')[0]}</Text>
             <Text style={styles.orgName}>{org?.name || 'Field Service Pro'}</Text>
           </View>
         </View>

@@ -96,27 +96,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       .from('profiles').select('*').eq('id', session.user.id).single();
     const { data: roleData } = await supabase
       .from('user_roles').select('role').eq('user_id', session.user.id).maybeSingle();
-    set({
-      session,
-      user: {
-        id: session.user.id,
-        email: session.user.email || '',
-        display_name: profile?.display_name || '',
-        organization_id: profile?.organization_id,
-        role: roleData?.role || 'technician',
-        avatar_url: profile?.avatar_url,
-        phone: profile?.phone,
-        skills: profile?.skills || [],
-        bio: profile?.bio || '',
-        vehicle_type: profile?.vehicle_type || '',
-        license_number: profile?.license_number || '',
-        abn: profile?.abn || '',
-        employment_type: profile?.employment_type || 'employee',
-        can_collect_payment: profile?.can_collect_payment || false,
-        can_send_invoice: profile?.can_send_invoice || false,
-        can_view_financials: profile?.can_view_financials || false,
-      },
-    });
+    const user = {
+      id: session.user.id,
+      email: session.user.email || '',
+      display_name: profile?.display_name || '',
+      organization_id: profile?.organization_id,
+      role: roleData?.role || 'technician',
+      avatar_url: profile?.avatar_url,
+      phone: profile?.phone,
+      skills: profile?.skills || [],
+      bio: profile?.bio || '',
+      vehicle_type: profile?.vehicle_type || '',
+      license_number: profile?.license_number || '',
+      abn: profile?.abn || '',
+      employment_type: profile?.employment_type || 'employee',
+      can_collect_payment: profile?.can_collect_payment || false,
+      can_send_invoice: profile?.can_send_invoice || false,
+      can_view_financials: profile?.can_view_financials || false,
+    };
+    // This also runs in the background whenever the session is re-announced or refreshed. Keep the
+    // same object when nothing changed, so screens that fill a form from the user (Edit Profile)
+    // do not reset what is being typed.
+    const prev = get().user;
+    set({ session, user: prev && JSON.stringify(prev) === JSON.stringify(user) ? prev : user });
   },
 
   signOut: async () => {

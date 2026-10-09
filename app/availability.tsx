@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { getOrgId } from '../lib/getOrgId';
 import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
-import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
+import { AppHeader } from '../components/AppHeader';
 
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const TIMES = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 
 export default function Availability() {
-  const headerTop = useSafeHeaderTop();
   const { user } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -89,13 +87,7 @@ export default function Availability() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: headerTop }]}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4, marginRight: 12 }}>
-          <Ionicons name="arrow-back" size={24} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.title}>My Availability</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <AppHeader title="My Availability" onBack={() => router.back()} />
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         <Text style={styles.hint}>Set your working hours. Your admin will see this when assigning jobs.</Text>
@@ -159,8 +151,6 @@ const styles = StyleSheet.create({
   bottomBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingTop: 60, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  title: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
   scroll: { flex: 1 },
   hint: { fontSize: 13, color: '#64748B', padding: 16, paddingBottom: 8 },
   dayCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 10, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },

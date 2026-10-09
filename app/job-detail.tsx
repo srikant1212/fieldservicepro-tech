@@ -10,10 +10,14 @@ import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
 import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
-import { formatCurrency, formatTime, telUrl } from '../lib/formatters';
+import { formatDate, formatCurrency, formatTime, telUrl } from '../lib/formatters';
 import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
 import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 import { NotFound } from '../components/NotFound';
+
+// Activity entries written by the office store dates as 2026-08-25; show them the way the rest of the app does
+const formatActivityDetails = (details: string) =>
+  String(details || '').replace(/\b\d{4}-\d{2}-\d{2}\b/g, d => formatDate(d + 'T00:00:00') || d);
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', accepted:'#14B8A6', travelling:'#F59E0B', 
@@ -720,10 +724,10 @@ export default function JobDetail() {
                         <Text style={{ fontSize: 11, color: '#94A3B8' }}>Tap to view</Text>
                       </TouchableOpacity>
                     ) : (
-                      <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                      <Text style={{ fontSize: 13, color: '#1E293B' }}>{formatActivityDetails(a.details)}</Text>
                     );
                   })() : (
-                    <Text style={{ fontSize: 13, color: '#1E293B' }}>{a.details}</Text>
+                    <Text style={{ fontSize: 13, color: '#1E293B' }}>{formatActivityDetails(a.details)}</Text>
                   )}
                   <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{new Date(a.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>

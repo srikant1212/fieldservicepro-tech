@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
   name: 'Field Service Pro',
-  version: '1.0.0',
+  version: '1.1.0',
   website: 'https://fieldservicepro.work',
   subscriptionUrl: 'https://fieldservicepro.work/subscription',
   supportEmail: 'support@fieldservicepro.work',

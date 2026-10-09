@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +32,7 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const refreshUnread = useNotificationStore(s => s.refreshUnread);
+  const incoming = useNotificationStore(s => s.incoming);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +50,8 @@ export default function NotificationsScreen() {
   };
 
   useFocusEffect(useCallback(() => { fetchNotifications(); }, [user?.id]));
+  // A notification arrived live while this screen is mounted: show it without a manual refresh
+  useEffect(() => { if (incoming > 0) fetchNotifications(); }, [incoming]);
 
   const openItem = async (n: any) => {
     if (!n.read) {

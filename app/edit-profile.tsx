@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
-import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
+import { AppHeader } from '../components/AppHeader';
+import { FormInput } from '../components/FormInput';
 
 const COLORS = { primary: '#0066FF', dark: '#1E293B', gray: '#64748B', border: '#E2E8F0', background: '#F8FAFC' };
 
 const SKILLS = ['Plumbing','Electrical','HVAC','IT Support','Cleaning','Painting','Carpentry','Landscaping','Security','Appliance Repair'];
 
 export default function EditProfile() {
-  const headerTop = useSafeHeaderTop();
   const router = useRouter();
   const { user, refreshUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
@@ -64,35 +63,26 @@ export default function EditProfile() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: headerTop }]}>
-        <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Profile</Text>
-      </View>
+      <AppHeader title="Edit Profile" onBack={() => router.back()} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Personal Details</Text>
           {[
-            { label: 'Full Name *', key: 'display_name', placeholder: 'John Smith' },
+            { label: 'Full Name', key: 'display_name', placeholder: 'John Smith', required: true },
             { label: 'Phone', key: 'phone', placeholder: '04XX XXX XXX', keyboard: 'phone-pad' },
             { label: 'License Number', key: 'license_number', placeholder: 'e.g. EC12345' },
             { label: 'ABN', key: 'abn', placeholder: '12 345 678 901', keyboard: 'numeric' },
             { label: 'Vehicle Type', key: 'vehicle_type', placeholder: 'e.g. White Van, Ute' },
           ].map(field => (
-            <View key={field.key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <TextInput style={styles.input} value={(form as any)[field.key]}
-                onChangeText={v => setForm(f => ({...f, [field.key]: v}))}
-                placeholder={field.placeholder} keyboardType={(field as any).keyboard || 'default'} placeholderTextColor="#94A3B8" />
-            </View>
+            <FormInput key={field.key} containerStyle={styles.field} label={field.label} required={(field as any).required}
+              value={(form as any)[field.key]} onChangeText={v => setForm(f => ({...f, [field.key]: v}))}
+              placeholder={field.placeholder} keyboardType={(field as any).keyboard || 'default'} />
           ))}
-          <Text style={styles.label}>Bio / About Me</Text>
-          <TextInput style={[styles.input, { height: 80 }]} value={form.bio}
+          <FormInput containerStyle={styles.field} label="Bio / About Me" multilineHeight={80} value={form.bio}
             onChangeText={v => setForm(f => ({...f, bio: v}))}
-            placeholder="Brief description of your experience..." multiline textAlignVertical="top" placeholderTextColor="#94A3B8" />
+            placeholder="Brief description of your experience..." multiline />
         </View>
 
         <View style={styles.card}>
@@ -116,15 +106,12 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
+  field: { marginBottom: 0, marginTop: 12 },
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  title: { flex: 1, fontSize: 18, fontWeight: '800', color: '#1E293B' },
   saveBtn: { backgroundColor: '#0066FF', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   cardTitle: { fontSize: 15, fontWeight: '800', color: '#1E293B', marginBottom: 12 },
-  label: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 6, marginTop: 12, textTransform: 'uppercase' },
-  input: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 15, color: '#1E293B', backgroundColor: '#F8FAFC' },
   skillBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
   skillActive: { backgroundColor: '#EFF6FF', borderColor: '#0066FF' },
   skillText: { fontSize: 13, fontWeight: '600', color: '#64748B' },

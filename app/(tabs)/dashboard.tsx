@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [org, setOrg] = useState<any>(null);
   const [loadError, setLoadError] = useState(false);
   const [showOverdue, setShowOverdue] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const { unread, refreshUnread } = useNotificationStore();
 
@@ -42,6 +43,7 @@ export default function Dashboard() {
       if (jobsRes.error) throw jobsRes.error;
       setJobs(jobsRes.data || []);
       setOrg(orgRes.data);
+      setLogoFailed(false);
       setLoadError(false);
     } catch (e) {
       console.error(e);
@@ -90,6 +92,9 @@ export default function Dashboard() {
     if (error) Alert.alert('Error', 'Failed to start job. Please try again.');
     fetchData();
   };
+
+  // Shown in place of the company logo when there is none or it fails to load
+  const orgInitials = String(org?.name || '').split(/\s+/).filter(Boolean).map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
 
   const daysOverdue = (date: string) => Math.max(1, Math.round((new Date(today + 'T00:00:00').getTime() - new Date(date + 'T00:00:00').getTime()) / 86400000));
 
@@ -149,8 +154,12 @@ export default function Dashboard() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: headerTop }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          {org?.logo_url ? (
-            <Image source={{ uri: org.logo_url }} style={{ width: 36, height: 36, borderRadius: 8, resizeMode: 'contain', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          {org?.logo_url && !logoFailed ? (
+            <Image source={{ uri: org.logo_url }} onError={() => setLogoFailed(true)} style={{ width: 36, height: 36, borderRadius: 8, resizeMode: 'contain', backgroundColor: 'rgba(255,255,255,0.2)' }} />
+          ) : org?.name ? (
+            <View style={styles.orgInitials}>
+              <Text style={styles.orgInitialsText}>{orgInitials}</Text>
+            </View>
           ) : null}
           <View>
             <Text style={styles.greeting}>Hey, {user?.display_name?.split(' ')[0]} 👋</Text>
@@ -269,6 +278,8 @@ const styles = StyleSheet.create({
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0066FF', paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
   greeting: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  orgInitials: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.25)', justifyContent: 'center', alignItems: 'center' },
+  orgInitialsText: { fontSize: 14, fontWeight: '800', color: '#fff' },
   orgName: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   notifCount: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   notifCountText: { fontSize: 10, fontWeight: '800', color: '#fff' },

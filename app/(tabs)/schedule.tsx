@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadError } from '../../components/LoadError';
-import { toLocalDateStr } from '../../lib/formatters';
+import { formatTime, toLocalDateStr } from '../../lib/formatters';
 import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 export default function Schedule() {
@@ -84,7 +84,7 @@ export default function Schedule() {
           <TouchableOpacity key={job.id} style={styles.jobCard} onPress={() => router.push({ pathname: '/job-detail', params: { id: job.id } } as any)}>
             <View style={[styles.timeBar, { backgroundColor: STATUS_COLORS[job.status] || '#94A3B8' }]} />
             <View style={styles.jobInfo}>
-              {job.time_start && <Text style={styles.jobTime}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text>}
+              {job.time_start && <Text style={styles.jobTime}>{formatTime(job.time_start)}{job.time_end ? ` — ${formatTime(job.time_end)}` : ''}</Text>}
               <Text style={styles.jobTitle}>{job.title}</Text>
               <Text style={styles.jobCustomer}>{job.customer_name}</Text>
               {!!job.address && <View style={{ flexDirection:'row', gap:4, alignItems:'center' }}><Ionicons name="location-outline" size={12} color="#94A3B8"/><Text style={styles.jobAddress} numberOfLines={1}>{job.address}</Text></View>}

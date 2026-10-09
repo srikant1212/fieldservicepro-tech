@@ -10,7 +10,7 @@ import { haptic } from '../lib/haptics';
 import { toast } from '../lib/toast';
 import { createJobReportPdf } from '../lib/jobReport';
 import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClosingNotes, type ClosingAnswers } from '../lib/closingNotes';
-import { formatCurrency, telUrl } from '../lib/formatters';
+import { formatCurrency, formatTime, telUrl } from '../lib/formatters';
 import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
 import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
 import { NotFound } from '../components/NotFound';
@@ -540,7 +540,7 @@ export default function JobDetail() {
           <Text style={styles.cardTitle}>Customer</Text>
           <Text style={styles.customerName}>{job.customer_name}</Text>
           {!!job.address && <View style={styles.infoRow}><Ionicons name="location-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{job.address}</Text></View>}
-          {!!job.date && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{new Date(job.date).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' })}{job.time_start ? ` · ${job.time_start.slice(0,5)}` : ''}</Text></View>}
+          {!!job.date && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={16} color="#64748B"/><Text style={styles.infoText}>{new Date(job.date).toLocaleDateString('en-AU', { weekday:'long', day:'numeric', month:'long' })}{job.time_start ? ` · ${formatTime(job.time_start)}` : ''}</Text></View>}
           {job.estimate > 0 && user?.can_view_financials && <View style={styles.infoRow}><Ionicons name="cash-outline" size={16} color="#64748B"/><Text style={styles.infoText}>Estimate: ${job.estimate}</Text></View>}
           
           <View style={styles.actionBtns}>

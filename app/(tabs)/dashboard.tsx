@@ -9,7 +9,7 @@ import { toast } from '../../lib/toast';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { LoadError } from '../../components/LoadError';
-import { formatDate, toLocalDateStr } from '../../lib/formatters';
+import { formatDate, formatTime, toLocalDateStr } from '../../lib/formatters';
 import { useSafeHeaderTop } from '../../lib/useSafeHeaderTop';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -110,7 +110,7 @@ export default function Dashboard() {
         </View>
         <Text style={styles.jobCustomer}>{job.customer_name}</Text>
         {job.address ? <View style={styles.jobMeta}><Ionicons name="location-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText} numberOfLines={1}>{job.address}</Text></View> : null}
-        {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{job.time_start?.slice(0,5)}{job.time_end ? ` — ${job.time_end?.slice(0,5)}` : ''}</Text></View> : null}
+        {job.time_start ? <View style={styles.jobMeta}><Ionicons name="time-outline" size={12} color="#94A3B8" /><Text style={styles.jobMetaText}>{formatTime(job.time_start)}{job.time_end ? ` — ${formatTime(job.time_end)}` : ''}</Text></View> : null}
         
         {(job.status === 'scheduled' || job.status === 'new' || job.status === 'pending') && (
           <TouchableOpacity style={[styles.startBtn, { backgroundColor: '#14B8A6' }]} onPress={() => handleAccept(job)}>

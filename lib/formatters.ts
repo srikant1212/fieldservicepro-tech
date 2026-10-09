@@ -46,3 +46,11 @@ export function toLocalDateStr(date: Date = new Date()): string {
 export function telUrl(phone: string): string {
   return `tel:${String(phone || '').replace(/[^\d+]/g, '')}`;
 }
+
+/** "16:00:00" -> "4:00 PM" */
+export function formatTime(time: string): string {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(time || ''));
+  if (!m) return '';
+  const h = Number(m[1]);
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}

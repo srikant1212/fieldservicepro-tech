@@ -13,6 +13,7 @@ import { CLOSING_QUESTIONS, EMPTY_CLOSING_ANSWERS, formatClosingNotes, parseClos
 import { formatCurrency, telUrl } from '../lib/formatters';
 import { RescheduleSheet, formatRescheduleDate } from '../components/RescheduleSheet';
 import { useSafeHeaderTop } from '../lib/useSafeHeaderTop';
+import { NotFound } from '../components/NotFound';
 
 const STATUS_COLORS: Record<string,string> = { 
   new:'#6B7280', scheduled:'#8B5CF6', accepted:'#14B8A6', travelling:'#F59E0B', 
@@ -499,7 +500,7 @@ export default function JobDetail() {
   };
 
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#0066FF" size="large" /></View>;
-  if (!job) return <View style={styles.loading}><Text>Job not found</Text></View>;
+  if (!job) return <NotFound title="Job not found" onRetry={() => { setLoading(true); fetchJob(); }} onBack={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/dashboard')} />;
 
   const color = STATUS_COLORS[job.status] || '#94A3B8';
 

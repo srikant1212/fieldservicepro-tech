@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Image, Platform, Linking, Modal, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, Image, Platform, Linking, Modal, KeyboardAvoidingView, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -41,6 +41,11 @@ export default function JobDetail() {
   const { user } = useAuthStore();
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try { await fetchJob(); } finally { setRefreshing(false); }
+  };
   const [notes, setNotes] = useState('');
   const [activity, setActivity] = useState<any[]>([]);
   const [actorNames, setActorNames] = useState<Record<string,string>>({});
@@ -529,7 +534,7 @@ export default function JobDetail() {
         </View>
       )}
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={"#0066FF"} />}>
         {/* Customer Info */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Customer</Text>

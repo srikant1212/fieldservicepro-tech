@@ -89,13 +89,13 @@ export default function EditProfile() {
               <Text style={styles.label}>{field.label}</Text>
               <TextInput style={styles.input} value={(form as any)[field.key]}
                 onChangeText={v => setForm(f => ({...f, [field.key]: v}))}
-                placeholder={field.placeholder} keyboardType={(field as any).keyboard || 'default'} />
+                placeholder={field.placeholder} keyboardType={(field as any).keyboard || 'default'} placeholderTextColor="#94A3B8" />
             </View>
           ))}
           <Text style={styles.label}>Bio / About Me</Text>
           <TextInput style={[styles.input, { height: 80 }]} value={form.bio}
             onChangeText={v => setForm(f => ({...f, bio: v}))}
-            placeholder="Brief description of your experience..." multiline textAlignVertical="top" />
+            placeholder="Brief description of your experience..." multiline textAlignVertical="top" placeholderTextColor="#94A3B8" />
         </View>
 
         <View style={styles.card}>

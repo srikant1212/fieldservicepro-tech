@@ -77,7 +77,7 @@ export default function Onboarding() {
             ].map(f => (
               <View key={f.key} style={styles.field}>
                 <Text style={styles.label}>{f.label}</Text>
-                <TextInput style={styles.input} placeholder={f.placeholder} placeholderTextColor="#CBD5E1"
+                <TextInput style={styles.input} placeholder={f.placeholder} placeholderTextColor="#94A3B8"
                   value={form[f.key as keyof typeof form] as string}
                   onChangeText={v => setForm(prev => ({ ...prev, [f.key]: v }))} />
               </View>
@@ -119,13 +119,13 @@ export default function Onboarding() {
             <Text style={styles.stepTitle}>Vehicle & Bio</Text>
             <View style={styles.field}>
               <Text style={styles.label}>Vehicle Type</Text>
-              <TextInput style={styles.input} placeholder="e.g. White Toyota HiLux" placeholderTextColor="#CBD5E1"
+              <TextInput style={styles.input} placeholder="e.g. White Toyota HiLux" placeholderTextColor="#94A3B8"
                 value={form.vehicle_type} onChangeText={v => setForm(f => ({ ...f, vehicle_type: v }))} />
             </View>
             <View style={styles.field}>
               <Text style={styles.label}>Short Bio</Text>
               <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                placeholder="Tell customers a bit about yourself..." placeholderTextColor="#CBD5E1"
+                placeholder="Tell customers a bit about yourself..." placeholderTextColor="#94A3B8"
                 value={form.bio} onChangeText={v => setForm(f => ({ ...f, bio: v }))} multiline />
             </View>
             <View style={styles.navBtns}>

@@ -566,7 +566,7 @@ export default function JobDetail() {
               {savingNotes ? <ActivityIndicator color="#0066FF" size="small" /> : <Text style={styles.saveNotesBtnText}>Save</Text>}
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.notesInput} placeholder="Add notes about this job..." placeholderTextColor="#CBD5E1"
+          <TextInput style={styles.notesInput} placeholder="Add notes about this job..." placeholderTextColor="#94A3B8"
             value={notes} onChangeText={setNotes} multiline numberOfLines={4} textAlignVertical="top" />
         </View>
 
@@ -623,9 +623,9 @@ export default function JobDetail() {
                 </View>
               ))}
               <View style={styles.addMaterialRow}>
-                <TextInput style={[styles.materialInput, { flex: 2 }]} placeholder="Material name" value={newMaterial.name} onChangeText={v => setNewMaterial(p => ({...p, name: v}))} />
-                <TextInput style={[styles.materialInput, { flex: 0.6 }]} placeholder="Qty" value={newMaterial.qty} onChangeText={v => setNewMaterial(p => ({...p, qty: v}))} keyboardType="numeric" />
-                <TextInput style={[styles.materialInput, { flex: 0.8 }]} placeholder="$Cost" value={newMaterial.cost} onChangeText={v => setNewMaterial(p => ({...p, cost: v}))} keyboardType="decimal-pad" />
+                <TextInput style={[styles.materialInput, { flex: 2 }]} placeholder="Material name" value={newMaterial.name} onChangeText={v => setNewMaterial(p => ({...p, name: v}))} placeholderTextColor="#94A3B8" />
+                <TextInput style={[styles.materialInput, { flex: 0.6 }]} placeholder="Qty" value={newMaterial.qty} onChangeText={v => setNewMaterial(p => ({...p, qty: v}))} keyboardType="numeric" placeholderTextColor="#94A3B8" />
+                <TextInput style={[styles.materialInput, { flex: 0.8 }]} placeholder="$Cost" value={newMaterial.cost} onChangeText={v => setNewMaterial(p => ({...p, cost: v}))} keyboardType="decimal-pad" placeholderTextColor="#94A3B8" />
                 <TouchableOpacity style={styles.addMaterialBtn} onPress={handleAddMaterial}>
                   <Ionicons name="add" size={20} color="#fff" />
                 </TouchableOpacity>
@@ -803,7 +803,7 @@ export default function JobDetail() {
                   <TextInput
                     style={{ borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, fontSize: 14, color: '#1E293B', minHeight: 68, textAlignVertical: 'top' }}
                     placeholder={q.placeholder}
-                    placeholderTextColor="#CBD5E1"
+                    placeholderTextColor="#94A3B8"
                     value={closingAnswers[q.key]}
                     onChangeText={v => setClosingAnswers(prev => ({ ...prev, [q.key]: v }))}
                     multiline
@@ -816,7 +816,7 @@ export default function JobDetail() {
             <TextInput
               style={{ borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 15, marginBottom: 16, color: '#1E293B' }}
               placeholder="Customer name confirms job completion"
-              placeholderTextColor="#CBD5E1"
+              placeholderTextColor="#94A3B8"
               value={signerName}
               onChangeText={setSignerName}
             />
